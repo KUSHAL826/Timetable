@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Management — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Faculty Management{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data="{ addModalOpen: false }">
+
+  <!-- Header Banner -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Faculty Management (Whole College)</h1>
+      <p class="text-xs text-slate-500 mt-0.5">
+        Add teacher accounts across all departments, configure qualifications, weekly workloads, and provide initial credentials.
+      </p>
+    </div>
+    <button
+      @click="addModalOpen = true"
+      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-2 transition-all"
+    >
+      <i data-lucide="user-plus" class="h-4 w-4"></i>
+      <span>Add Teacher Account</span>
+    </button>
+  </div>
+
+  <!-- Newly Created Faculty Credentials Alert -->
+  {% if success_created %}
+  <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs">
+    <div class="flex items-center gap-2 font-bold mb-1">
+      <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600"></i>
+      <span>Teacher Account Successfully Created!</span>
+    </div>
+    <p>Please share the following initial login credentials with the faculty member:</p>
+    <div class="mt-2 p-3 bg-white border border-emerald-200 rounded-lg font-mono text-slate-800 space-y-1">
+      <p>• Teacher ID: <strong>{{ success_created.employee_id }}</strong></p>
+      <p>• Initial Password: <strong>{{ success_created.phone_number }}</strong> (registered phone number)</p>
+      <p>• Full Name: <strong>{{ success_created.full_name }}</strong></p>
+      <p>• Department: <strong>{{ success_created.department_name }}</strong></p>
+    </div>
+    <p class="mt-2 text-[11px] text-emerald-700">
+      The teacher will be required to change their password upon their first login.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- Faculty Roster Table -->
+  <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+      <h3 class="text-sm font-bold text-slate-900">College Faculty Roster & Workload</h3>
+      <span class="text-xs text-slate-500 font-mono">{{ faculty|length }} registered faculty</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Teacher ID</th>
+            <th class="py-3 px-6">Full Name</th>
+            <th class="py-3 px-6">Department</th>
+            <th class="py-3 px-6">Phone (Initial Pass)</th>
+            <th class="py-3 px-6">Email</th>
+            <th class="py-3 px-6">Max Hours</th>
+            <th class="py-3 px-6">Qualified Subjects</th>
+            <th class="py-3 px-6 text-right">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% if not faculty %}
+          <tr>
+            <td colspan="8" class="py-8 text-center text-slate-400 italic">
+              No faculty members added yet. Click "Add Teacher Account" to add the college teachers.
+            </td>
+          </tr>
+          {% else %}
+            {% for f in faculty %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-mono font-bold text-slate-900">{{ f.employee_id }}</td>
+              <td class="py-3.5 px-6 font-semibold text-slate-800">{{ f.full_name }}</td>
+              <td class="py-3.5 px-6">
+                <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-200 text-[11px]">
+                  {{ f.department_name }} ({{ f.department_code }})
+                </span>
+              </td>
+              <td class="py-3.5 px-6 font-mono text-slate-600">{{ f.phone_number }}</td>
+              <td class="py-3.5 px-6 text-slate-500">{{ f.email }}</td>
+              <td class="py-3.5 px-6 font-mono font-medium">{{ f.max_weekly_hours }} hrs/wk</td>
+              <td class="py-3.5 px-6">
+                <div class="flex flex-wrap gap-1">
+                  {% for s_code in f.qualified_subjects %}
+                  <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200">
+                    {{ s_code }}
+                  </span>
+                  {% else %}
+                  <span class="text-slate-400 italic text-[11px]">All Subjects</span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td class="py-3.5 px-6 text-right">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                  Active
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Teacher Modal -->
+  <div
+    x-show="addModalOpen"
+    x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+  >
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100" @click.away="addModalOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Add New Teacher Account</h3>
+          <p class="text-xs text-slate-500">Teacher ID will be username, phone number will be initial password.</p>
+        </div>
+        <button @click="addModalOpen = false" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form method="POST" action="/faculty/create" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Teacher / Employee ID *</label>
+          <input
+            type="text"
+            name="employee_id"
+            required
+            placeholder="e.g. T101, T102, 18402"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label>
+          <input
+            type="text"
+            name="full_name"
+            required
+            placeholder="e.g. Dr. Ramesh Sharma"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          />
+        </div>
+
+        <!-- Dynamic Department Selector -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">College Department *</label>
+          <select
+            name="department_id"
+            required
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          >
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Phone Number (Initial Password) *</label>
+            <input
+              type="text"
+              name="phone_number"
+              required
+              placeholder="e.g. 9845012341"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Max Weekly Hours</label>
+            <input
+              type="number"
+              name="max_weekly_hours"
+              value="20"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="e.g. ramesh.sharma@college.edu"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          />
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            @click="addModalOpen = false"
+            class="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+          >
+            Create Faculty Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Timetable — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}My Schedule{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Faculty Profile Header (Dynamic Whole College Scope) -->
+  <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-8 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold uppercase tracking-wider border border-blue-500/30">
+          Faculty Portal
+        </span>
+        <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-medium border border-emerald-500/30">
+          Read Only • No Edits
+        </span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight mt-2">{{ current_user.full_name }}</h1>
+      <div class="flex items-center gap-4 text-xs text-slate-300 mt-2 font-mono">
+        <span>Teacher ID: <strong class="text-white">{{ current_user.employee_id }}</strong></span>
+        <span>•</span>
+        <span>Department: <strong class="text-white">{{ teacher_department_name }}{% if teacher_department_code %} ({{ teacher_department_code }}){% endif %}</strong></span>
+      </div>
+    </div>
+
+    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-center">
+      <p class="text-xs text-blue-200">Total Teaching Hours</p>
+      <p class="text-2xl font-bold text-white mt-1">{{ schedule|length }} hrs / week</p>
+    </div>
+  </div>
+
+  {% if not has_timetable %}
+  <div class="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-center gap-3">
+    <i data-lucide="clock" class="h-5 w-5 text-amber-600 shrink-0"></i>
+    <span>The Timetable Officer has not yet published an active institutional timetable for your cluster. You will be able to view your classes here once published.</span>
+  </div>
+  {% endif %}
+
+  <!-- Weekly Schedule Grid -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Weekly Teaching Schedule</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Your authorized theory classes, lab practicals, and co-teaching duties.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+        {{ generation_status|upper }}
+      </span>
+    </div>
+
+    <div class="p-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+      {% for day_num in [1, 2, 3, 4, 5] %}
+      {% set day_name = day_names[day_num] %}
+      {% set day_items = schedule_by_day[day_num] %}
+      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 flex flex-col gap-3">
+        <div class="pb-2 border-b border-slate-200 flex items-center justify-between">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">{{ day_name }}</h4>
+          <span class="text-[10px] text-slate-500 font-semibold font-mono">{{ day_items|length }} hrs</span>
+        </div>
+
+        <div class="space-y-2.5">
+          {% if day_items|length == 0 %}
+            <p class="text-[11px] text-slate-400 italic py-4 text-center">No assigned classes</p>
+          {% else %}
+            {% for item in day_items %}
+            <div class="p-3 rounded-lg border text-xs shadow-2xs transition-all {% if item.entry_type == 'lab' %}bg-rose-50/80 border-rose-200 text-rose-950{% elif item.entry_type == 'elective' %}bg-purple-50/80 border-purple-200 text-purple-950{% else %}bg-white border-slate-200 text-slate-900{% endif %}">
+              <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono mb-1">
+                <span>Period {{ item.period_number }}</span>
+                <span>{{ item.start_time[:5] }} - {{ item.end_time[:5] }}</span>
+              </div>
+              <p class="font-bold text-slate-900">{{ item.subject_code }}</p>
+              <p class="text-[11px] text-slate-600 truncate">{{ item.subject_name }}</p>
+
+              <div class="mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                <span class="font-semibold px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-700">
+                  Sec {{ item.section_name }} {% if item.batch_name %}({{ item.batch_name }}){% endif %}
+                </span>
+                <span class="font-medium text-slate-600">
+                  {{ item.room_code or item.lab_name }}
+                </span>
+              </div>
+
+              {% if item.is_co_teacher %}
+              <span class="inline-block mt-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">
+                Co-Teacher Role
+              </span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

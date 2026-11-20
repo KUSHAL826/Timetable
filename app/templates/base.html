@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SmartTimetable AI — Institutional Scheduling Platform{% endblock %}</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+  <!-- HTMX CDN -->
+  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-100/70 text-slate-900 antialiased min-h-screen flex" x-data="{ sidebarOpen: false }">
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div
+    x-show="sidebarOpen"
+    x-cloak
+    class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+    @click="sidebarOpen = false"
+  ></div>
+
+  <!-- Main Sidebar -->
+  <aside
+    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+    class="fixed top-0 bottom-0 left-0 z-50 w-72 bg-slate-900 text-slate-100 border-r border-slate-800 flex flex-col transition-transform duration-200 ease-in-out"
+  >
+    <!-- Brand Header -->
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/40">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
+          ST
+        </div>
+        <div>
+          <h1 class="text-sm font-bold tracking-tight text-white leading-none">SmartTimetable</h1>
+          <span className="text-[10px] font-medium text-blue-400 tracking-wider uppercase">AI Institutional OS</span>
+        </div>
+      </div>
+      <button @click="sidebarOpen = false" class="lg:hidden text-slate-400 hover:text-white">
+        <i data-lucide="x" class="h-5 w-5"></i>
+      </button>
+    </div>
+
+    <!-- Logged in User Card -->
+    {% if current_user %}
+    <div class="p-4 mx-3 my-3 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="h-9 w-9 rounded-full bg-slate-700 text-blue-300 font-semibold flex items-center justify-center text-xs shrink-0">
+          {{ current_user.employee_id }}
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-white truncate">{{ current_user.full_name }}</p>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="inline-block h-1.5 w-1.5 rounded-full {% if current_user.role == 'timetable_officer' %}bg-blue-400{% else %}bg-emerald-400{% endif %}"></span>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">
+              {% if current_user.role == 'timetable_officer' %}Timetable Officer{% else %}Faculty (Read Only){% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Sidebar Navigation -->
+    <div class="flex-1 overflow-y-auto px-4 py-2 space-y-6">
+      {% if current_user and current_user.role == 'timetable_officer' %}
+        <!-- Officer Navigation -->
+        <div class="space-y-1">
+          <p class="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Core Overview</p>
+          <a href="/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'dashboard' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="/validation" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'validation' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <div class="flex items-center gap-3">
+              <i data-lucide="check-circle-2" class="h-4 w-4"></i>
+              <span>Input Validation</span>
+            </div>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Gating</span>
+          </a>
+          <a href="/ai-advisory" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'ai-advisory' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="bot" class="h-4 w-4"></i>
+            <span>AI Assistant</span>
+          </a>
+        </div>
+
+        <div class="space-y-1">
+          <p class="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Academic Setup</p>
+          <a href="/academic" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'academic' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="layers" class="h-4 w-4"></i>
+            <span>Academic Setup</span>
+          </a>
+          <a href="/faculty" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'faculty' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="users" class="h-4 w-4"></i>
+            <span>Faculty Management</span>
+          </a>
+          <a href="/subjects" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'subjects' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="book-open" class="h-4 w-4"></i>
+            <span>Subjects & Allocations</span>
+          </a>
+          <a href="/rooms-labs" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'rooms-labs' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="building" class="h-4 w-4"></i>
+            <span>Classrooms & Labs</span>
+          </a>
+          <a href="/availability" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'availability' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="clock" class="h-4 w-4"></i>
+            <span>Availability Matrix</span>
+          </a>
+          <a href="/electives" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'electives' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="graduation-cap" class="h-4 w-4"></i>
+            <span>Professional Electives</span>
+          </a>
+        </div>
+
+        <div class="space-y-1">
+          <p class="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Scheduling & Viewer</p>
+          <a href="/generate" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'generate' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="wand-2" class="h-4 w-4"></i>
+            <span>Generate Timetable</span>
+          </a>
+          <a href="/viewer" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'viewer' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="table" class="h-4 w-4"></i>
+            <span>Timetable Viewer</span>
+          </a>
+          <a href="/editor" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'editor' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+            <span>Manual Editor</span>
+          </a>
+          <a href="/excel-tools" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'excel-tools' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="file-spreadsheet" class="h-4 w-4"></i>
+            <span>Excel Import / Export</span>
+          </a>
+        </div>
+      {% else %}
+        <!-- Teacher Navigation (Strictly Read Only, No Edits) -->
+        <div class="space-y-1">
+          <p class="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Faculty Portal (Read Only)</p>
+          <a href="/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'dashboard' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="calendar" class="h-4 w-4"></i>
+            <span>My Timetable</span>
+          </a>
+          <a href="/my-schedule" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'my-schedule' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="clock" class="h-4 w-4"></i>
+            <span>Weekly Schedule</span>
+          </a>
+          <a href="/my-labs" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800/70 hover:text-white transition-all {% if active_page == 'my-labs' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-300{% endif %}">
+            <i data-lucide="flask-conical" class="h-4 w-4"></i>
+            <span>Lab Practical Sessions</span>
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Sign Out Button -->
+    <div class="p-4 border-t border-slate-800 bg-slate-950/30">
+      <a href="/logout" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-950/30 hover:text-red-300 border border-transparent hover:border-red-900/50 transition-colors">
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>Sign Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout -->
+  <div class="flex-1 lg:pl-72 flex flex-col min-w-0">
+    <!-- Top Navbar -->
+    <header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-6 flex items-center justify-between shadow-xs">
+      <div class="flex items-center gap-4">
+        <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 hover:text-slate-900">
+          <i data-lucide="menu" class="h-6 w-6"></i>
+        </button>
+        <div class="flex items-center gap-2 text-xs text-slate-500">
+          <span class="font-semibold text-slate-800">SmartTimetable Institutional OS</span>
+          <i data-lucide="chevron-right" class="h-3.5 w-3.5 text-slate-400"></i>
+          <span class="capitalize text-slate-600 font-medium">{% block breadcrumb %}Dashboard{% endblock %}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs border border-slate-200">
+          <span class="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+          <span>Academic Year 2026-2027</span>
+        </div>
+        {% if current_user and current_user.role == 'timetable_officer' %}
+          <span class="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">
+            Officer Mode
+          </span>
+        {% else %}
+          <span class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+            Faculty (View Only)
+          </span>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 p-6 lg:p-8 max-w-7xl w-full mx-auto">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

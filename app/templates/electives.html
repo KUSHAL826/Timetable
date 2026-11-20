@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Professional Electives — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Professional Electives{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Professional Elective Management</h1>
+      <p class="text-xs text-slate-500">
+        Synchronized elective blocks: Students from multiple sections regroup. All participating sections are blocked simultaneously.
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <h3 class="text-sm font-bold text-slate-900">Configured Elective Blocks</h3>
+      <span class="text-xs text-slate-500 font-mono">{{ electives|length }} block(s)</span>
+    </div>
+
+    <div class="divide-y divide-slate-100 text-xs">
+      {% for grp in electives %}
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="text-base font-bold text-slate-900">{{ grp.group_name }}</h4>
+            <p class="text-slate-500 mt-0.5">3 hours / week • Synchronized across Sections</p>
+          </div>
+          <span class="px-2.5 py-1 rounded bg-purple-50 text-purple-700 text-xs font-semibold border border-purple-200">
+            Synchronized Group
+          </span>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+          <p class="font-bold text-slate-800">Elective Course Options & Assigned Classrooms:</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {% for opt in grp.options %}
+            <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+              <p class="font-bold text-slate-900">{{ opt.subject_name }}</p>
+              <div class="mt-2 text-[11px] text-slate-600 space-y-0.5">
+                <p>• Room: <strong class="text-slate-800">Lecture Hall 104</strong> (Cap: 85 seats)</p>
+                <p>• Enrolled Students: <strong class="text-slate-800">{{ opt.total_students }} students</strong></p>
+                <p>• Faculty: <strong class="text-blue-700">Allocated Faculty</strong></p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

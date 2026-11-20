@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Excel Import & Export — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Excel Import / Export{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Excel & CSV Bulk Tools</h1>
+      <p class="text-xs text-slate-500">
+        Download verified institutional Excel templates, bulk import records, and export published schedules.
+      </p>
+    </div>
+  </div>
+
+  <!-- Downloadable Templates -->
+  <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+    <h3 class="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100">Download Official Templates</h3>
+    <p class="text-xs text-slate-500 mt-2">Use these structured workbooks to prepare data for institutional upload.</p>
+
+    <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+      <a href="/api/excel/template/faculty" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 font-semibold text-slate-800 flex items-center justify-between transition-colors">
+        <span>Faculty Template</span>
+        <i data-lucide="download" class="h-4 w-4 text-blue-600"></i>
+      </a>
+      <a href="/api/excel/template/sections" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 font-semibold text-slate-800 flex items-center justify-between transition-colors">
+        <span>Sections Template</span>
+        <i data-lucide="download" class="h-4 w-4 text-blue-600"></i>
+      </a>
+      <a href="/api/excel/template/classrooms" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 font-semibold text-slate-800 flex items-center justify-between transition-colors">
+        <span>Classrooms Template</span>
+        <i data-lucide="download" class="h-4 w-4 text-blue-600"></i>
+      </a>
+      <a href="/api/excel/template/laboratories" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 font-semibold text-slate-800 flex items-center justify-between transition-colors">
+        <span>Laboratories Template</span>
+        <i data-lucide="download" class="h-4 w-4 text-blue-600"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Export Active Schedule -->
+  <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+    <h3 class="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100">Export Timetable</h3>
+    <p class="text-xs text-slate-500 mt-2">Download the current timetable in institutional spreadsheet or delimited format.</p>
+
+    {% if active_gen_id %}
+    <div class="mt-4 flex flex-wrap gap-3">
+      <a
+        href="/excel/export/timetable/{{ active_gen_id }}?format=xlsx"
+        class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all"
+      >
+        <i data-lucide="file-spreadsheet" class="h-4 w-4"></i>
+        <span>Download Complete Excel (.xlsx)</span>
+      </a>
+      <a
+        href="/excel/export/timetable/{{ active_gen_id }}?format=csv"
+        class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all"
+      >
+        <i data-lucide="download" class="h-4 w-4"></i>
+        <span>Download CSV</span>
+      </a>
+    </div>
+    {% else %}
+    <p class="mt-3 text-xs text-slate-400 italic">No generated timetable exists to export yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

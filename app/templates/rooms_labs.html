@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Rooms & Laboratories — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Classrooms & Labs{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ activeTab: 'staffing' }">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Classrooms, Labs & Practical Staffing</h1>
+      <p class="text-xs text-slate-500">
+        Critical Module: Define seating limits, workstation capacities, primary faculty, and required co-teachers for practicals.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
+    <button
+      @click="activeTab = 'staffing'"
+      :class="activeTab === 'staffing' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Lab Staffing & Co-Teachers
+    </button>
+    <button
+      @click="activeTab = 'batches'"
+      :class="activeTab === 'batches' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Student Lab Batches
+    </button>
+    <button
+      @click="activeTab = 'classrooms'"
+      :class="activeTab === 'classrooms' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Lecture Classrooms
+    </button>
+    <button
+      @click="activeTab = 'laboratories'"
+      :class="activeTab === 'laboratories' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Laboratories
+    </button>
+  </div>
+
+  <!-- Lab Staffing Tab -->
+  <div x-show="activeTab === 'staffing'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Practical Staffing Requirements</h3>
+          <p class="text-[11px] text-slate-500">Every practical session must have 1 Primary Faculty + exactly configured Co-Teachers.</p>
+        </div>
+      </div>
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Section</th>
+            <th class="py-3 px-6">Practical Subject</th>
+            <th class="py-3 px-6">Laboratory</th>
+            <th class="py-3 px-6">Primary Faculty</th>
+            <th class="py-3 px-6">Co-Teachers Required</th>
+            <th class="py-3 px-6 text-right">Consecutive Periods</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% for st in lab_staffing %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-bold text-slate-900">Sec {{ st.section_name }}</td>
+            <td class="py-3.5 px-6 font-semibold">{{ st.subject_name }}</td>
+            <td class="py-3.5 px-6 font-mono text-slate-600">{{ st.lab_name }}</td>
+            <td class="py-3.5 px-6 text-blue-700 font-semibold">{{ st.primary_faculty_name }}</td>
+            <td class="py-3.5 px-6">
+              <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-mono font-bold border border-amber-200">
+                {{ st.required_co_teacher_count }} Co-Teacher(s)
+              </span>
+            </td>
+            <td class="py-3.5 px-6 text-right font-mono">{{ st.consecutive_periods }} consecutive hrs</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Student Lab Batches Tab -->
+  <div x-show="activeTab === 'batches'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-slate-900">Student Batches for Lab Partitioning</h3>
+        <p class="text-[11px] text-slate-500">Allows parallel lab practicals without exceeding laboratory seating limits.</p>
+      </div>
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Section</th>
+            <th class="py-3 px-6">Batch Identifier</th>
+            <th class="py-3 px-6 text-right">Student Count</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% for b in lab_batches %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-semibold">Section {{ b.section_name }}</td>
+            <td class="py-3.5 px-6 font-mono font-bold text-slate-900">{{ b.batch_name }}</td>
+            <td class="py-3.5 px-6 text-right font-mono">{{ b.student_count }} students</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lecture Classrooms Tab -->
+  <div x-show="activeTab === 'classrooms'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-slate-900">Lecture Classrooms</h3>
+      </div>
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Room Code</th>
+            <th class="py-3 px-6">Room Name</th>
+            <th class="py-3 px-6">Room Type</th>
+            <th class="py-3 px-6 text-right">Seating Capacity</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% for r in classrooms %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ r.room_code }}</td>
+            <td class="py-3.5 px-6 font-medium text-slate-800">{{ r.room_name }}</td>
+            <td class="py-3.5 px-6 capitalize text-slate-500">{{ r.room_type }}</td>
+            <td class="py-3.5 px-6 text-right font-mono font-bold">{{ r.capacity }} seats</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Laboratories Tab -->
+  <div x-show="activeTab === 'laboratories'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-slate-900">Laboratories</h3>
+      </div>
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Lab Code</th>
+            <th class="py-3 px-6">Lab Name</th>
+            <th class="py-3 px-6">Student Capacity</th>
+            <th class="py-3 px-6 text-right">Workstation Capacity</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% for l in laboratories %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-mono font-bold text-rose-600">{{ l.lab_code }}</td>
+            <td class="py-3.5 px-6 font-medium text-slate-800">{{ l.lab_name }}</td>
+            <td class="py-3.5 px-6 font-mono">{{ l.student_capacity }} students</td>
+            <td class="py-3.5 px-6 text-right font-mono font-bold">{{ l.workstation_capacity }} terminals</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

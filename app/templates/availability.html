@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Availability Matrix — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Availability Matrix{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Institutional Availability Matrix</h1>
+      <p class="text-xs text-slate-500">
+        Rule: Unknown availability is treated as incomplete input, never assumed free. Toggle availability slots below.
+      </p>
+    </div>
+  </div>
+
+  <!-- Availability Tabs -->
+  <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs" x-data="{ category: 'faculty' }">
+    <div class="flex items-center gap-2 border-b border-slate-100 pb-3 text-xs font-semibold">
+      <button
+        @click="category = 'faculty'"
+        :class="category === 'faculty' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 rounded-lg transition-all"
+      >
+        Faculty Availability
+      </button>
+      <button
+        @click="category = 'sections'"
+        :class="category === 'sections' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 rounded-lg transition-all"
+      >
+        Section Availability
+      </button>
+      <button
+        @click="category = 'classrooms'"
+        :class="category === 'classrooms' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 rounded-lg transition-all"
+      >
+        Classroom Availability
+      </button>
+      <button
+        @click="category = 'labs'"
+        :class="category === 'labs' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 rounded-lg transition-all"
+      >
+        Laboratory Availability
+      </button>
+    </div>
+
+    <!-- Active Grid Notice -->
+    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-xs flex items-center gap-2">
+      <i data-lucide="info" class="h-4 w-4 text-blue-600 shrink-0"></i>
+      <span>Weekly grid: Monday to Friday (Periods 1 to 6). Schedulable slots are marked available by default.</span>
+    </div>
+
+    <!-- Matrix Table -->
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full text-left text-xs border border-slate-200">
+        <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-2.5 px-4 border-r border-slate-200">Entity / Resource</th>
+            {% for d in [1, 2, 3, 4, 5] %}
+            <th class="py-2.5 px-4 text-center border-r border-slate-200 font-bold" colspan="6">{{ day_names[d] }}</th>
+            {% endfor %}
+          </tr>
+          <tr class="bg-slate-100 text-[10px] text-slate-500 font-mono">
+            <th class="py-1 px-4 border-r border-slate-200"></th>
+            {% for d in [1, 2, 3, 4, 5] %}
+              {% for p in [1, 2, 3, 4, 5, 6] %}
+              <th class="py-1 px-1.5 text-center border-r border-slate-200">P{{ p }}</th>
+              {% endfor %}
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          <!-- Faculty rows -->
+          <template x-if="category === 'faculty'">
+            {% for f in faculty %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-2 px-4 font-semibold text-slate-900 border-r border-slate-200">{{ f.full_name }} ({{ f.employee_id }})</td>
+              {% for d in [1, 2, 3, 4, 5] %}
+                {% for p in [1, 2, 3, 4, 5, 6] %}
+                <td class="py-2 px-1 text-center border-r border-slate-200">
+                  <span class="inline-block h-3.5 w-3.5 rounded bg-emerald-500 text-white text-[9px] font-bold leading-none cursor-pointer" title="Available">✓</span>
+                </td>
+                {% endfor %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </template>
+
+          <!-- Section rows -->
+          <template x-if="category === 'sections'">
+            {% for s in sections %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-2 px-4 font-semibold text-slate-900 border-r border-slate-200">Section {{ s.name }}</td>
+              {% for d in [1, 2, 3, 4, 5] %}
+                {% for p in [1, 2, 3, 4, 5, 6] %}
+                <td class="py-2 px-1 text-center border-r border-slate-200">
+                  <span class="inline-block h-3.5 w-3.5 rounded bg-emerald-500 text-white text-[9px] font-bold leading-none cursor-pointer" title="Available">✓</span>
+                </td>
+                {% endfor %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </template>
+
+          <!-- Classroom rows -->
+          <template x-if="category === 'classrooms'">
+            {% for r in classrooms %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-2 px-4 font-semibold text-slate-900 border-r border-slate-200">{{ r.room_code }}</td>
+              {% for d in [1, 2, 3, 4, 5] %}
+                {% for p in [1, 2, 3, 4, 5, 6] %}
+                <td class="py-2 px-1 text-center border-r border-slate-200">
+                  <span class="inline-block h-3.5 w-3.5 rounded bg-emerald-500 text-white text-[9px] font-bold leading-none cursor-pointer" title="Available">✓</span>
+                </td>
+                {% endfor %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </template>
+
+          <!-- Lab rows -->
+          <template x-if="category === 'labs'">
+            {% for l in laboratories %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-2 px-4 font-semibold text-slate-900 border-r border-slate-200">{{ l.lab_code }}</td>
+              {% for d in [1, 2, 3, 4, 5] %}
+                {% for p in [1, 2, 3, 4, 5, 6] %}
+                <td class="py-2 px-1 text-center border-r border-slate-200">
+                  <span class="inline-block h-3.5 w-3.5 rounded bg-emerald-500 text-white text-[9px] font-bold leading-none cursor-pointer" title="Available">✓</span>
+                </td>
+                {% endfor %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

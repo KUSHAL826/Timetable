@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Timetable Viewer — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Schedule Viewer{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Controls & Filter Bar -->
+  <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-lg font-bold tracking-tight text-slate-900">Institutional Timetable Viewer</h1>
+      <p class="text-xs text-slate-500">Filter schedule by Cluster, Section, Faculty, Room, or Lab.</p>
+    </div>
+
+    <!-- Export & Filter Actions -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      {% if active_gen_id %}
+      <a
+        href="/excel/export/timetable/{{ active_gen_id }}?format=xlsx"
+        class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors border border-slate-300"
+      >
+        <i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 text-emerald-600"></i>
+        <span>Export Excel (.xlsx)</span>
+      </a>
+      <a
+        href="/excel/export/timetable/{{ active_gen_id }}?format=csv"
+        class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors border border-slate-300"
+      >
+        <i data-lucide="download" class="h-3.5 w-3.5 text-blue-600"></i>
+        <span>Export CSV</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Filter Selector -->
+  <form method="GET" action="/viewer" class="bg-white p-4 rounded-xl border border-slate-200/80 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+    <div>
+      <label class="block font-semibold text-slate-700 mb-1">Section</label>
+      <select name="section_id" onchange="this.form.submit()" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+        <option value="">All Sections</option>
+        {% for s in sections %}
+        <option value="{{ s.id }}" {% if selected_section == s.id %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold text-slate-700 mb-1">Faculty</label>
+      <select name="faculty_id" onchange="this.form.submit()" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+        <option value="">All Faculty</option>
+        {% for f in faculty %}
+        <option value="{{ f.id }}" {% if selected_faculty == f.id %}selected{% endif %}>{{ f.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold text-slate-700 mb-1">Room / Lab</label>
+      <select name="room_id" onchange="this.form.submit()" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+        <option value="">All Locations</option>
+        {% for r in classrooms %}
+        <option value="{{ r.id }}">{{ r.room_code }} (Classroom)</option>
+        {% endfor %}
+        {% for l in laboratories %}
+        <option value="{{ l.id }}">{{ l.lab_code }} (Laboratory)</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold text-slate-700 mb-1">Day</label>
+      <select name="day_of_week" onchange="this.form.submit()" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+        <option value="">Monday - Friday</option>
+        <option value="1">Monday</option>
+        <option value="2">Tuesday</option>
+        <option value="3">Wednesday</option>
+        <option value="4">Thursday</option>
+        <option value="5">Friday</option>
+      </select>
+    </div>
+  </form>
+
+  <!-- Schedule Table -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3.5 px-6">Day & Period</th>
+            <th class="py-3.5 px-6">Timing</th>
+            <th class="py-3.5 px-6">Section / Batch</th>
+            <th class="py-3.5 px-6">Subject</th>
+            <th class="py-3.5 px-6">Faculty & Co-Teachers</th>
+            <th class="py-3.5 px-6">Location</th>
+            <th class="py-3.5 px-6 text-right">Type</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% if not entries %}
+          <tr>
+            <td colspan="7" class="py-12 text-center text-slate-400 italic">
+              No schedule entries match the selected filters.
+            </td>
+          </tr>
+          {% else %}
+            {% for e in entries %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-semibold text-slate-900">
+                {{ day_names[e.day_of_week] }} • Period {{ e.period_number }}
+              </td>
+              <td class="py-3.5 px-6 font-mono text-slate-500 text-[11px]">
+                {{ e.start_time[:5] }} - {{ e.end_time[:5] }}
+              </td>
+              <td class="py-3.5 px-6">
+                <span class="font-bold text-slate-800">
+                  {{ e.section_name or 'Elective Block' }}
+                </span>
+                {% if e.batch_name %}
+                <span class="block text-[10px] text-slate-400 font-medium">Batch {{ e.batch_name }}</span>
+                {% endif %}
+              </td>
+              <td class="py-3.5 px-6">
+                <span class="font-bold text-slate-900 font-mono">{{ e.subject_code }}</span>
+                <span class="block text-[11px] text-slate-500 truncate max-w-xs">{{ e.subject_name }}</span>
+              </td>
+              <td class="py-3.5 px-6">
+                <span class="font-medium text-slate-800">{{ e.faculty_name }}</span>
+                {% for co_name in e.co_faculty_names %}
+                <span class="block text-[10px] text-amber-700">Co: {{ co_name }}</span>
+                {% endfor %}
+              </td>
+              <td class="py-3.5 px-6 font-medium text-slate-700">
+                {{ e.room_code or e.lab_name }}
+              </td>
+              <td class="py-3.5 px-6 text-right">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {% if e.entry_type == 'lab' %}bg-rose-100 text-rose-800{% elif e.entry_type == 'elective' %}bg-purple-100 text-purple-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                  {{ e.entry_type }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Setup — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Academic Setup{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ activeTab: 'clusters', addDeptOpen: false }">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Academic Structure & Setup (Whole College)</h1>
+      <p class="text-xs text-slate-500">
+        Multi-department architecture: Configure college departments, academic calendars, clusters, and sections dynamically.
+      </p>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
+    <button
+      @click="activeTab = 'clusters'"
+      :class="activeTab === 'clusters' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Clusters
+    </button>
+    <button
+      @click="activeTab = 'sections'"
+      :class="activeTab === 'sections' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Sections
+    </button>
+    <button
+      @click="activeTab = 'departments'"
+      :class="activeTab === 'departments' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
+      class="px-4 py-2 rounded-lg transition-all"
+    >
+      Departments
+    </button>
+  </div>
+
+  <!-- Clusters Tab Content -->
+  <div x-show="activeTab === 'clusters'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900">Configured Academic Clusters</h3>
+        <span class="text-xs text-slate-500 font-mono">{{ clusters|length }} cluster(s)</span>
+      </div>
+      <div class="divide-y divide-slate-100 text-xs">
+        {% for c in clusters %}
+        <div class="p-5 hover:bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="font-bold text-slate-900 text-sm">{{ c.name }}</h4>
+              <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200 text-[10px]">
+                {{ c.department_name }}
+              </span>
+            </div>
+            <p class="text-slate-500 mt-1">{{ c.description }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-medium">
+              Cluster Scheduling Target
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sections Tab Content -->
+  <div x-show="activeTab === 'sections'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900">Student Sections (Multi-Department)</h3>
+        <span class="text-xs text-slate-500 font-mono">{{ sections|length }} section(s)</span>
+      </div>
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Section Name</th>
+            <th class="py-3 px-6">Department</th>
+            <th class="py-3 px-6">Student Strength</th>
+            <th class="py-3 px-6">Semester</th>
+            <th class="py-3 px-6 text-right">Cluster</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% for s in sections %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-bold text-slate-900">Section {{ s.name }}</td>
+            <td class="py-3.5 px-6">
+              <span class="font-semibold text-slate-800">{{ s.department_name }}</span>
+              <span class="text-slate-400 font-mono text-[10px]"> ({{ s.department_code }})</span>
+            </td>
+            <td class="py-3.5 px-6 font-mono">{{ s.student_strength }} students</td>
+            <td class="py-3.5 px-6">Semester 5</td>
+            <td class="py-3.5 px-6 text-right">
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium font-mono">Cluster 1</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Departments Tab Content -->
+  <div x-show="activeTab === 'departments'" class="space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">College Departments</h3>
+          <p class="text-[11px] text-slate-500">Every faculty, section, and cluster maps directly to one of these departments.</p>
+        </div>
+        <button
+          @click="addDeptOpen = !addDeptOpen"
+          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"
+        >
+          <i data-lucide="plus" class="h-3.5 w-3.5"></i>
+          <span>Add Department</span>
+        </button>
+      </div>
+
+      <!-- Add Department Form Drawer -->
+      <div x-show="addDeptOpen" x-cloak class="p-5 bg-slate-50 border-b border-slate-200">
+        <form method="POST" action="/academic/department/create" class="flex flex-col sm:flex-row items-end gap-3 text-xs">
+          <div class="flex-1">
+            <label class="block font-semibold text-slate-700 mb-1">Department Name *</label>
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="e.g. Civil Engineering"
+              class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs"
+            />
+          </div>
+          <div class="w-32">
+            <label class="block font-semibold text-slate-700 mb-1">Code *</label>
+            <input
+              type="text"
+              name="code"
+              required
+              placeholder="e.g. CIVIL"
+              class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono uppercase"
+            />
+          </div>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shrink-0"
+          >
+            Save Department
+          </button>
+        </form>
+      </div>
+
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Department Code</th>
+            <th class="py-3 px-6">Department Name</th>
+            <th class="py-3 px-6 text-right">Scope</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% for d in departments %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ d.code }}</td>
+            <td class="py-3.5 px-6 font-semibold text-slate-800">{{ d.name }}</td>
+            <td class="py-3.5 px-6 text-right">
+              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">
+                College Wide
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

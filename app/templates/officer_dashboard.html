@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Welcome & Control Center Header -->
+  <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 rounded-2xl p-8 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div>
+      <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold uppercase tracking-wider border border-blue-500/30">
+        Timetable Officer Portal
+      </span>
+      <h1 class="text-2xl font-bold tracking-tight mt-2">Institutional Scheduling Control Center</h1>
+      <p class="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+        <strong>Rule: INPUT FIRST, VALIDATION SECOND, GENERATION LAST.</strong> Ensure all faculty qualifications, lab staffing requirements (primary + co-teachers), and availability constraints are fully validated before solver generation.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="/validation" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-sm border border-white/20 transition-all flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="h-4 w-4"></i>
+        <span>Validate Inputs</span>
+      </a>
+      <a href="/generate" class="px-5 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-md flex items-center gap-2 {% if is_blocked %}bg-slate-700 text-slate-400 cursor-not-allowed{% else %}bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30{% endif %}">
+        <i data-lucide="wand-2" class="h-4 w-4"></i>
+        <span>Generate Timetable</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards Grid -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <a href="/academic" class="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all group">
+      <div class="flex items-center justify-between">
+        <span class="p-2.5 rounded-lg bg-blue-50 text-blue-600">
+          <i data-lucide="layers" class="h-5 w-5"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold text-slate-800 mt-4 group-hover:text-blue-600 transition-colors">{{ stats.clusters }}</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Active Clusters</p>
+    </a>
+
+    <a href="/academic" class="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all group">
+      <div class="flex items-center justify-between">
+        <span class="p-2.5 rounded-lg bg-indigo-50 text-indigo-600">
+          <i data-lucide="calendar" class="h-5 w-5"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold text-slate-800 mt-4 group-hover:text-indigo-600 transition-colors">{{ stats.sections }}</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Total Sections</p>
+    </a>
+
+    <a href="/faculty" class="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all group">
+      <div class="flex items-center justify-between">
+        <span class="p-2.5 rounded-lg bg-emerald-50 text-emerald-600">
+          <i data-lucide="users" class="h-5 w-5"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold text-slate-800 mt-4 group-hover:text-emerald-600 transition-colors">{{ stats.faculty }}</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Faculty Members</p>
+    </a>
+
+    <a href="/subjects" class="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all group">
+      <div class="flex items-center justify-between">
+        <span class="p-2.5 rounded-lg bg-violet-50 text-violet-600">
+          <i data-lucide="book-open" class="h-5 w-5"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold text-slate-800 mt-4 group-hover:text-violet-600 transition-colors">{{ stats.subjects }}</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Curriculum Subjects</p>
+    </a>
+
+    <a href="/rooms-labs" class="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all group">
+      <div class="flex items-center justify-between">
+        <span class="p-2.5 rounded-lg bg-amber-50 text-amber-600">
+          <i data-lucide="building" class="h-5 w-5"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold text-slate-800 mt-4 group-hover:text-amber-600 transition-colors">{{ stats.classrooms }}</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Lecture Classrooms</p>
+    </a>
+
+    <a href="/rooms-labs" class="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all group">
+      <div class="flex items-center justify-between">
+        <span class="p-2.5 rounded-lg bg-rose-50 text-rose-600">
+          <i data-lucide="flask-conical" class="h-5 w-5"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold text-slate-800 mt-4 group-hover:text-rose-600 transition-colors">{{ stats.laboratories }}</p>
+      <p class="text-xs text-slate-500 font-medium mt-0.5">Laboratories</p>
+    </a>
+  </div>
+
+  <!-- Validation Gate Card -->
+  <div class="p-6 rounded-2xl border {% if is_blocked %}bg-rose-50/70 border-rose-200 text-rose-950{% else %}bg-emerald-50/70 border-emerald-200 text-emerald-950{% endif %}">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex items-start gap-4">
+        <div class="p-3 rounded-xl shrink-0 {% if is_blocked %}bg-rose-100 text-rose-600{% else %}bg-emerald-100 text-emerald-600{% endif %}">
+          <i data-lucide="{% if is_blocked %}alert-triangle{% else %}check-circle-2{% endif %}" class="h-6 w-6"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold tracking-tight">
+            {% if is_blocked %}Automatic Solver Gated by Incomplete Data{% else %}Input Validation Passed: Ready for Generation{% endif %}
+          </h3>
+          <p class="text-xs mt-1 text-slate-600 max-w-2xl leading-relaxed">
+            {% if is_blocked %}
+              There are {{ validation.blocking_error_count }} blocking validation error(s) (e.g. faculty roster, subject allocations, lab co-teachers, or room capacities). Generation is locked until resolved.
+            {% else %}
+              All mandatory inputs (academic structure, faculty qualification, lab staffing, batches, and availability) are verified.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <a href="/validation" class="px-4 py-2 rounded-lg text-xs font-semibold shrink-0 transition-colors {% if is_blocked %}bg-rose-600 hover:bg-rose-700 text-white{% else %}bg-emerald-600 hover:bg-emerald-700 text-white{% endif %}">
+        Open Validation Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Core Workflows & Management Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Faculty Card -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="p-2.5 rounded-lg bg-emerald-50 text-emerald-600">
+            <i data-lucide="users" class="h-5 w-5"></i>
+          </span>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Step 1</span>
+        </div>
+        <h4 class="text-sm font-bold text-slate-900 mt-4">Faculty Management</h4>
+        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+          Create teacher accounts, configure qualifications, manage weekly workloads, and provide initial credentials.
+        </p>
+      </div>
+      <a href="/faculty" class="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <span>Manage Faculty</span>
+        <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+      </a>
+    </div>
+
+    <!-- Lab Staffing Card -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="p-2.5 rounded-lg bg-rose-50 text-rose-600">
+            <i data-lucide="flask-conical" class="h-5 w-5"></i>
+          </span>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Step 2</span>
+        </div>
+        <h4 class="text-sm font-bold text-slate-900 mt-4">Lab Staffing & Batches</h4>
+        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+          Configure primary lab faculty, exact required co-teachers, consecutive practical slots, and student batch splits.
+        </p>
+      </div>
+      <a href="/rooms-labs" class="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <span>Configure Lab Staffing</span>
+        <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+      </a>
+    </div>
+
+    <!-- AI Advisory Card -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="p-2.5 rounded-lg bg-blue-50 text-blue-600">
+            <i data-lucide="bot" class="h-5 w-5"></i>
+          </span>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">AI Agents</span>
+        </div>
+        <h4 class="text-sm font-bold text-slate-900 mt-4">AI Consultation & Advisory</h4>
+        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+          Multi-agent audit (Academic, Faculty, Lab, Elective agents) and Gemini 2.0 Flash feasibility analysis.
+        </p>
+      </div>
+      <a href="/ai-advisory" class="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <span>Consult AI Agents</span>
+        <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Timetables -->
+  <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 className="text-sm font-bold text-slate-900">Recent Timetable Generations</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Immutable snapshots and solver outputs.</p>
+      </div>
+      <a href="/viewer" class="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        Open Schedule Viewer
+      </a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Generation ID</th>
+            <th class="py-3 px-6">Cluster</th>
+            <th class="py-3 px-6">Solver Status</th>
+            <th class="py-3 px-6">Lifecycle</th>
+            <th class="py-3 px-6">Date</th>
+            <th class="py-3 px-6 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% if not generations %}
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-400 italic">
+              No timetables generated yet. Ensure inputs pass validation, then click Generate Timetable.
+            </td>
+          </tr>
+          {% else %}
+            {% for gen in generations %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-mono text-slate-600 font-medium">{{ gen.id[:8] }}...</td>
+              <td class="py-3.5 px-6 font-medium text-slate-800">{{ gen.cluster_name }} <span class="text-slate-400 font-normal">({{ gen.department_name }})</span></td>
+              <td class="py-3.5 px-6">
+                <span class="px-2 py-0.5 rounded text-[11px] font-semibold {% if gen.solver_status == 'OPTIMAL' %}bg-emerald-100 text-emerald-800{% elif gen.solver_status == 'FEASIBLE' %}bg-blue-100 text-blue-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                  {{ gen.solver_status }}
+                </span>
+              </td>
+              <td class="py-3.5 px-6">
+                <span class="capitalize px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium">
+                  {{ gen.status }}
+                </span>
+              </td>
+              <td class="py-3.5 px-6 text-slate-500">{{ gen.created_at[:10] }}</td>
+              <td class="py-3.5 px-6 text-right">
+                <a href="/viewer?gen={{ gen.id }}" class="text-blue-600 hover:text-blue-800 font-semibold">
+                  Inspect Schedule
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
