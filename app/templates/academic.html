@@ -4,16 +4,37 @@
 {% block breadcrumb %}Academic Setup{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="{ activeTab: 'clusters', addDeptOpen: false }">
+<div class="space-y-6" x-data="{
+  activeTab: 'clusters',
+  addDeptOpen: false,
+  editDeptOpen: false,
+  deleteDeptOpen: false,
+  editDept: { id: '', name: '', code: '' },
+  deleteDept: { id: '', name: '', code: '' },
+  addSecOpen: false,
+  editSecOpen: false,
+  deleteSecOpen: false,
+  editSec: { id: '', name: '', department_id: '', student_strength: 60 },
+  deleteSec: { id: '', name: '' }
+}">
+
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
       <h1 class="text-xl font-bold tracking-tight text-slate-900">Academic Structure & Setup (Whole College)</h1>
       <p class="text-xs text-slate-500">
-        Multi-department architecture: Configure college departments, academic calendars, clusters, and sections dynamically.
+        Configure institutional departments, student sections, and multi-department scheduling clusters dynamically.
       </p>
     </div>
   </div>
+
+  <!-- Notification Banner -->
+  {% if message %}
+  <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs flex items-center gap-3">
+    <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 shrink-0"></i>
+    <span>{{ message }}</span>
+  </div>
+  {% endif %}
 
   <!-- Navigation Tabs -->
   <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
@@ -22,21 +43,21 @@
       :class="activeTab === 'clusters' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
       class="px-4 py-2 rounded-lg transition-all"
     >
-      Clusters
+      Clusters ({{ clusters|length }})
     </button>
     <button
       @click="activeTab = 'sections'"
       :class="activeTab === 'sections' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
       class="px-4 py-2 rounded-lg transition-all"
     >
-      Sections
+      Sections ({{ sections|length }})
     </button>
     <button
       @click="activeTab = 'departments'"
       :class="activeTab === 'departments' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
       class="px-4 py-2 rounded-lg transition-all"
     >
-      Departments
+      Departments ({{ departments|length }})
     </button>
   </div>
 
@@ -44,7 +65,10 @@
   <div x-show="activeTab === 'clusters'" class="space-y-4">
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-        <h3 class="text-sm font-bold text-slate-900">Configured Academic Clusters</h3>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Configured Academic Clusters</h3>
+          <p class="text-[11px] text-slate-500">Target grouping for simultaneous OR-Tools constraint solving.</p>
+        </div>
         <span class="text-xs text-slate-500 font-mono">{{ clusters|length }} cluster(s)</span>
       </div>
       <div class="divide-y divide-slate-100 text-xs">
@@ -61,7 +85,7 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-medium">
-              Cluster Scheduling Target
+              Active Optimization Target
             </span>
           </div>
         </div>
@@ -74,9 +98,19 @@
   <div x-show="activeTab === 'sections'" class="space-y-4">
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-        <h3 class="text-sm font-bold text-slate-900">Student Sections (Multi-Department)</h3>
-        <span class="text-xs text-slate-500 font-mono">{{ sections|length }} section(s)</span>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Student Sections (Multi-Department)</h3>
+          <p class="text-[11px] text-slate-500">Manage individual student cohorts, assigned departments, and enrolled counts.</p>
+        </div>
+        <button
+          @click="addSecOpen = true"
+          class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+        >
+          <i data-lucide="plus" class="h-3.5 w-3.5"></i>
+          <span>Add Section</span>
+        </button>
       </div>
+
       <table class="w-full text-left text-xs">
         <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
           <tr>
@@ -84,24 +118,53 @@
             <th class="py-3 px-6">Department</th>
             <th class="py-3 px-6">Student Strength</th>
             <th class="py-3 px-6">Semester</th>
-            <th class="py-3 px-6 text-right">Cluster</th>
+            <th class="py-3 px-6 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
-          {% for s in sections %}
-          <tr class="hover:bg-slate-50/50">
-            <td class="py-3.5 px-6 font-bold text-slate-900">Section {{ s.name }}</td>
-            <td class="py-3.5 px-6">
-              <span class="font-semibold text-slate-800">{{ s.department_name }}</span>
-              <span class="text-slate-400 font-mono text-[10px]"> ({{ s.department_code }})</span>
-            </td>
-            <td class="py-3.5 px-6 font-mono">{{ s.student_strength }} students</td>
-            <td class="py-3.5 px-6">Semester 5</td>
-            <td class="py-3.5 px-6 text-right">
-              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium font-mono">Cluster 1</span>
-            </td>
+          {% if not sections %}
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-400 italic">No sections created yet. Click "Add Section" to register one.</td>
           </tr>
-          {% endfor %}
+          {% else %}
+            {% for s in sections %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-bold text-slate-900">Section {{ s.name }}</td>
+              <td class="py-3.5 px-6">
+                <span class="font-semibold text-slate-800">{{ s.department_name }}</span>
+                <span class="text-slate-400 font-mono text-[10px]"> ({{ s.department_code }})</span>
+              </td>
+              <td class="py-3.5 px-6 font-mono">{{ s.student_strength }} students</td>
+              <td class="py-3.5 px-6">Semester 5</td>
+              <td class="py-3.5 px-6 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    @click="editSec = {
+                      id: '{{ s.id }}',
+                      name: '{{ s.name|replace(\"'\", \"\\'\") }}',
+                      department_id: '{{ s.department_id }}',
+                      student_strength: {{ s.student_strength }}
+                    }; editSecOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit Section"
+                  >
+                    <i data-lucide="edit-3" class="h-4 w-4"></i>
+                  </button>
+                  <button
+                    @click="deleteSec = {
+                      id: '{{ s.id }}',
+                      name: '{{ s.name|replace(\"'\", \"\\'\") }}'
+                    }; deleteSecOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title="Delete Section"
+                  >
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -113,11 +176,11 @@
       <div class="p-5 border-b border-slate-100 flex items-center justify-between">
         <div>
           <h3 class="text-sm font-bold text-slate-900">College Departments</h3>
-          <p class="text-[11px] text-slate-500">Every faculty, section, and cluster maps directly to one of these departments.</p>
+          <p class="text-[11px] text-slate-500">Every faculty, section, and subject maps directly to one of these departments.</p>
         </div>
         <button
           @click="addDeptOpen = !addDeptOpen"
-          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"
+          class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-sm"
         >
           <i data-lucide="plus" class="h-3.5 w-3.5"></i>
           <span>Add Department</span>
@@ -134,7 +197,7 @@
               name="name"
               required
               placeholder="e.g. Civil Engineering"
-              class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs"
+              class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
           </div>
           <div class="w-32">
@@ -144,12 +207,12 @@
               name="code"
               required
               placeholder="e.g. CIVIL"
-              class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono uppercase"
+              class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
           </div>
           <button
             type="submit"
-            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shrink-0"
+            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shrink-0 shadow-sm"
           >
             Save Department
           </button>
@@ -159,20 +222,49 @@
       <table class="w-full text-left text-xs">
         <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
           <tr>
+            <th class="py-3 px-6">ID</th>
             <th class="py-3 px-6">Department Code</th>
             <th class="py-3 px-6">Department Name</th>
-            <th class="py-3 px-6 text-right">Scope</th>
+            <th class="py-3 px-6">Scope</th>
+            <th class="py-3 px-6 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
           {% for d in departments %}
           <tr class="hover:bg-slate-50/50">
+            <td class="py-3.5 px-6 font-mono font-bold text-slate-500">{{ d.id }}</td>
             <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ d.code }}</td>
             <td class="py-3.5 px-6 font-semibold text-slate-800">{{ d.name }}</td>
-            <td class="py-3.5 px-6 text-right">
+            <td class="py-3.5 px-6">
               <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">
                 College Wide
               </span>
+            </td>
+            <td class="py-3.5 px-6 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button
+                  @click="editDept = {
+                    id: '{{ d.id }}',
+                    name: '{{ d.name|replace(\"'\", \"\\'\") }}',
+                    code: '{{ d.code }}'
+                  }; editDeptOpen = true"
+                  class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  title="Edit Department"
+                >
+                  <i data-lucide="edit-3" class="h-4 w-4"></i>
+                </button>
+                <button
+                  @click="deleteDept = {
+                    id: '{{ d.id }}',
+                    name: '{{ d.name|replace(\"'\", \"\\'\") }}',
+                    code: '{{ d.code }}'
+                  }; deleteDeptOpen = true"
+                  class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  title="Delete Department"
+                >
+                  <i data-lucide="trash-2" class="h-4 w-4"></i>
+                </button>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -180,5 +272,159 @@
       </table>
     </div>
   </div>
+
+  <!-- EDIT DEPARTMENT MODAL -->
+  <div x-show="editDeptOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="editDeptOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Edit Department</h3>
+          <p class="text-xs text-slate-500">Update department name and institutional abbreviation.</p>
+        </div>
+        <button @click="editDeptOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/academic/department/edit" class="mt-4 space-y-4">
+        <input type="hidden" name="department_id" :value="editDept.id" />
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Department Name *</label>
+          <input type="text" name="name" required :value="editDept.name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Department Code *</label>
+          <input type="text" name="code" required :value="editDept.code" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="editDeptOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE DEPARTMENT MODAL -->
+  <div x-show="deleteDeptOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="deleteDeptOpen = false">
+      <div class="flex items-center gap-3 text-rose-600 mb-3">
+        <div class="p-2.5 rounded-full bg-rose-50"><i data-lucide="alert-triangle" class="h-6 w-6"></i></div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Delete Department</h3>
+          <p class="text-xs text-slate-500">Remove academic department mapping.</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-600 mt-2">
+        Are you sure you want to delete <strong class="text-slate-900" x-text="deleteDept.name + ' (' + deleteDept.code + ')'"></strong>?
+      </p>
+      <form method="POST" action="/academic/department/delete" class="mt-5 flex items-center justify-end gap-3">
+        <input type="hidden" name="department_id" :value="deleteDept.id" />
+        <button type="button" @click="deleteDeptOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="h-4 w-4"></i>
+          <span>Delete Department</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD SECTION MODAL -->
+  <div x-show="addSecOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="addSecOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Add Student Section</h3>
+          <p class="text-xs text-slate-500">Register new class division and student enrollment count.</p>
+        </div>
+        <button @click="addSecOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/academic/section/create" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Section Identifier *</label>
+          <input type="text" name="name" required placeholder="e.g. 5C, 7A, 3B" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
+          <select name="department_id" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white">
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Student Strength *</label>
+          <input type="number" name="student_strength" required min="10" max="150" value="60" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="addSecOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Create Section</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT SECTION MODAL -->
+  <div x-show="editSecOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="editSecOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Edit Section</h3>
+          <p class="text-xs text-slate-500">Update section name, department, or student strength.</p>
+        </div>
+        <button @click="editSecOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/academic/section/edit" class="mt-4 space-y-4">
+        <input type="hidden" name="section_id" :value="editSec.id" />
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Section Identifier *</label>
+          <input type="text" name="name" required :value="editSec.name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
+          <select name="department_id" required :value="editSec.department_id" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white">
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Student Strength *</label>
+          <input type="number" name="student_strength" required min="10" max="150" :value="editSec.student_strength" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="editSecOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE SECTION MODAL -->
+  <div x-show="deleteSecOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="deleteSecOpen = false">
+      <div class="flex items-center gap-3 text-rose-600 mb-3">
+        <div class="p-2.5 rounded-full bg-rose-50"><i data-lucide="alert-triangle" class="h-6 w-6"></i></div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Delete Section</h3>
+          <p class="text-xs text-slate-500">Remove section cohort from academic schedule.</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-600 mt-2">
+        Are you sure you want to delete <strong class="text-slate-900" x-text="'Section ' + deleteSec.name"></strong>?
+      </p>
+      <form method="POST" action="/academic/section/delete" class="mt-5 flex items-center justify-end gap-3">
+        <input type="hidden" name="section_id" :value="deleteSec.id" />
+        <button type="button" @click="deleteSecOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="h-4 w-4"></i>
+          <span>Delete Section</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

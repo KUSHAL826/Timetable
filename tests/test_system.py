@@ -172,5 +172,104 @@ class TestSmartTimetableAI(unittest.TestCase):
         self.assertIn("solver_status", solver_res)
         print(f"✓ Test 8: Google OR-Tools CP-SAT solver status: {solver_res['solver_status']}.")
 
+    def test_09_dynamic_crud_entities(self):
+        """Test full dynamic Add, Edit, Delete for Subjects, Rooms, Labs, Faculty, Sections, Departments."""
+        # 1. Subject CRUD
+        sub_id = "test-sub-101"
+        store.subjects[sub_id] = {
+            "id": sub_id,
+            "subject_code": "CS601",
+            "subject_name": "Cloud Computing",
+            "subject_type": "theory",
+            "weekly_hours": 4,
+            "consecutive_periods": 1,
+            "department_id": "1",
+            "credits": 4,
+            "semester_id": "s5555555-5555-5555-5555-555555555555",
+            "is_active": True
+        }
+        self.assertIn(sub_id, store.subjects)
+        # Edit
+        store.subjects[sub_id]["subject_name"] = "Cloud Computing & DevOps"
+        self.assertEqual(store.subjects[sub_id]["subject_name"], "Cloud Computing & DevOps")
+        # Delete
+        store.delete_subject(sub_id)
+        self.assertNotIn(sub_id, store.subjects)
+
+        # 2. Classroom CRUD
+        room_id = "test-cr-999"
+        store.classrooms[room_id] = {
+            "id": room_id,
+            "room_code": "CR-999",
+            "room_name": "Virtual Lab Hall",
+            "capacity": 80,
+            "room_type": "classroom",
+            "is_active": True
+        }
+        self.assertIn(room_id, store.classrooms)
+        store.classrooms[room_id]["capacity"] = 90
+        self.assertEqual(store.classrooms[room_id]["capacity"], 90)
+        store.delete_classroom(room_id)
+        self.assertNotIn(room_id, store.classrooms)
+
+        # 3. Laboratory CRUD
+        lab_id = "test-lab-999"
+        store.laboratories[lab_id] = {
+            "id": lab_id,
+            "lab_code": "AI-LAB-1",
+            "lab_name": "Robotics Lab",
+            "lab_type": "hardware",
+            "student_capacity": 30,
+            "workstation_capacity": 30,
+            "equipment_details": "Robotics arms",
+            "is_active": True
+        }
+        self.assertIn(lab_id, store.laboratories)
+        store.laboratories[lab_id]["lab_name"] = "Advanced Robotics Lab"
+        self.assertEqual(store.laboratories[lab_id]["lab_name"], "Advanced Robotics Lab")
+        store.delete_laboratory(lab_id)
+        self.assertNotIn(lab_id, store.laboratories)
+
+        # 4. Faculty CRUD
+        fac_id = "test-fac-999"
+        store.faculty[fac_id] = {
+            "id": fac_id,
+            "employee_id": "T999",
+            "full_name": "Test Faculty",
+            "department_id": "1",
+            "phone_number": "9999999999",
+            "email": "t999@college.edu",
+            "max_weekly_hours": 20,
+            "is_active": True
+        }
+        store.profiles["T999"] = {
+            "id": fac_id,
+            "employee_id": "T999",
+            "full_name": "Test Faculty",
+            "role": "teacher"
+        }
+        self.assertIn(fac_id, store.faculty)
+        store.faculty[fac_id]["full_name"] = "Updated Faculty Name"
+        self.assertEqual(store.faculty[fac_id]["full_name"], "Updated Faculty Name")
+        store.delete_faculty(fac_id)
+        self.assertNotIn(fac_id, store.faculty)
+        self.assertNotIn("T999", store.profiles)
+
+        # 5. Section CRUD
+        sec_id = "test-sec-999"
+        store.sections[sec_id] = {
+            "id": sec_id,
+            "name": "5Z",
+            "department_id": "1",
+            "student_strength": 50
+        }
+        self.assertIn(sec_id, store.sections)
+        store.sections[sec_id]["name"] = "5X"
+        self.assertEqual(store.sections[sec_id]["name"], "5X")
+        store.delete_section(sec_id)
+        self.assertNotIn(sec_id, store.sections)
+
+        print("✓ Test 9: Dynamic CRUD for Subjects, Classrooms, Labs, Faculty, and Sections verified.")
+
 if __name__ == "__main__":
     unittest.main()

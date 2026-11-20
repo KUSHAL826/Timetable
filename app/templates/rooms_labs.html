@@ -4,16 +4,37 @@
 {% block breadcrumb %}Classrooms & Labs{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="{ activeTab: 'staffing' }">
+<div class="space-y-6" x-data="{
+  activeTab: 'staffing',
+  addRoomOpen: false,
+  editRoomOpen: false,
+  deleteRoomOpen: false,
+  editRoom: { id: '', room_code: '', room_name: '', capacity: 75, room_type: 'classroom' },
+  deleteRoom: { id: '', room_code: '', room_name: '' },
+  addLabOpen: false,
+  editLabOpen: false,
+  deleteLabOpen: false,
+  editLab: { id: '', lab_code: '', lab_name: '', lab_type: 'software', student_capacity: 35, workstation_capacity: 35, equipment_details: '' },
+  deleteLab: { id: '', lab_code: '', lab_name: '' }
+}">
+
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
       <h1 class="text-xl font-bold tracking-tight text-slate-900">Classrooms, Labs & Practical Staffing</h1>
       <p class="text-xs text-slate-500">
-        Critical Module: Define seating limits, workstation capacities, primary faculty, and required co-teachers for practicals.
+        Manage lecture halls, laboratory terminals, student batches, and practical session staffing requirements.
       </p>
     </div>
   </div>
+
+  <!-- Notification Banner -->
+  {% if message %}
+  <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs flex items-center gap-3">
+    <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 shrink-0"></i>
+    <span>{{ message }}</span>
+  </div>
+  {% endif %}
 
   <!-- Tabs Navigation -->
   <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
@@ -36,14 +57,14 @@
       :class="activeTab === 'classrooms' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
       class="px-4 py-2 rounded-lg transition-all"
     >
-      Lecture Classrooms
+      Lecture Classrooms ({{ classrooms|length }})
     </button>
     <button
       @click="activeTab = 'laboratories'"
       :class="activeTab === 'laboratories' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-200/60'"
       class="px-4 py-2 rounded-lg transition-all"
     >
-      Laboratories
+      Laboratories ({{ laboratories|length }})
     </button>
   </div>
 
@@ -68,20 +89,26 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
-          {% for st in lab_staffing %}
-          <tr class="hover:bg-slate-50/50">
-            <td class="py-3.5 px-6 font-bold text-slate-900">Sec {{ st.section_name }}</td>
-            <td class="py-3.5 px-6 font-semibold">{{ st.subject_name }}</td>
-            <td class="py-3.5 px-6 font-mono text-slate-600">{{ st.lab_name }}</td>
-            <td class="py-3.5 px-6 text-blue-700 font-semibold">{{ st.primary_faculty_name }}</td>
-            <td class="py-3.5 px-6">
-              <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-mono font-bold border border-amber-200">
-                {{ st.required_co_teacher_count }} Co-Teacher(s)
-              </span>
-            </td>
-            <td class="py-3.5 px-6 text-right font-mono">{{ st.consecutive_periods }} consecutive hrs</td>
+          {% if not lab_staffing %}
+          <tr>
+            <td colspan="6" class="py-6 text-center text-slate-400 italic">No lab staffing rules registered.</td>
           </tr>
-          {% endfor %}
+          {% else %}
+            {% for st in lab_staffing %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-bold text-slate-900">Sec {{ st.section_name }}</td>
+              <td class="py-3.5 px-6 font-semibold">{{ st.subject_name }}</td>
+              <td class="py-3.5 px-6 font-mono text-slate-600">{{ st.lab_name }}</td>
+              <td class="py-3.5 px-6 text-blue-700 font-semibold">{{ st.primary_faculty_name }}</td>
+              <td class="py-3.5 px-6">
+                <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-mono font-bold border border-amber-200">
+                  {{ st.required_co_teacher_count }} Co-Teacher(s)
+                </span>
+              </td>
+              <td class="py-3.5 px-6 text-right font-mono">{{ st.consecutive_periods }} consecutive hrs</td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -103,13 +130,19 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
-          {% for b in lab_batches %}
-          <tr class="hover:bg-slate-50/50">
-            <td class="py-3.5 px-6 font-semibold">Section {{ b.section_name }}</td>
-            <td class="py-3.5 px-6 font-mono font-bold text-slate-900">{{ b.batch_name }}</td>
-            <td class="py-3.5 px-6 text-right font-mono">{{ b.student_count }} students</td>
+          {% if not lab_batches %}
+          <tr>
+            <td colspan="3" class="py-6 text-center text-slate-400 italic">No batches created yet.</td>
           </tr>
-          {% endfor %}
+          {% else %}
+            {% for b in lab_batches %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-semibold">Section {{ b.section_name }}</td>
+              <td class="py-3.5 px-6 font-mono font-bold text-slate-900">{{ b.batch_name }}</td>
+              <td class="py-3.5 px-6 text-right font-mono">{{ b.student_count }} students</td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -118,27 +151,73 @@
   <!-- Lecture Classrooms Tab -->
   <div x-show="activeTab === 'classrooms'" class="space-y-4">
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-      <div class="p-5 border-b border-slate-100">
-        <h3 class="text-sm font-bold text-slate-900">Lecture Classrooms</h3>
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Lecture Classrooms</h3>
+          <p class="text-[11px] text-slate-500">Dedicated theory instruction halls with defined student seating capacities.</p>
+        </div>
+        <button
+          @click="addRoomOpen = true"
+          class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+        >
+          <i data-lucide="plus" class="h-3.5 w-3.5"></i>
+          <span>Add Classroom</span>
+        </button>
       </div>
+
       <table class="w-full text-left text-xs">
         <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
           <tr>
             <th class="py-3 px-6">Room Code</th>
             <th class="py-3 px-6">Room Name</th>
             <th class="py-3 px-6">Room Type</th>
-            <th class="py-3 px-6 text-right">Seating Capacity</th>
+            <th class="py-3 px-6">Seating Capacity</th>
+            <th class="py-3 px-6 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
-          {% for r in classrooms %}
-          <tr class="hover:bg-slate-50/50">
-            <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ r.room_code }}</td>
-            <td class="py-3.5 px-6 font-medium text-slate-800">{{ r.room_name }}</td>
-            <td class="py-3.5 px-6 capitalize text-slate-500">{{ r.room_type }}</td>
-            <td class="py-3.5 px-6 text-right font-mono font-bold">{{ r.capacity }} seats</td>
+          {% if not classrooms %}
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-400 italic">No classrooms added. Click "Add Classroom" to register one.</td>
           </tr>
-          {% endfor %}
+          {% else %}
+            {% for r in classrooms %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ r.room_code }}</td>
+              <td class="py-3.5 px-6 font-medium text-slate-800">{{ r.room_name }}</td>
+              <td class="py-3.5 px-6 capitalize text-slate-500">{{ r.room_type }}</td>
+              <td class="py-3.5 px-6 font-mono font-bold">{{ r.capacity }} seats</td>
+              <td class="py-3.5 px-6 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    @click="editRoom = {
+                      id: '{{ r.id }}',
+                      room_code: '{{ r.room_code }}',
+                      room_name: '{{ r.room_name|replace(\"'\", \"\\'\") }}',
+                      capacity: {{ r.capacity }},
+                      room_type: '{{ r.room_type }}'
+                    }; editRoomOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit Classroom"
+                  >
+                    <i data-lucide="edit-3" class="h-4 w-4"></i>
+                  </button>
+                  <button
+                    @click="deleteRoom = {
+                      id: '{{ r.id }}',
+                      room_code: '{{ r.room_code }}',
+                      room_name: '{{ r.room_name|replace(\"'\", \"\\'\") }}'
+                    }; deleteRoomOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title="Delete Classroom"
+                  >
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -147,30 +226,331 @@
   <!-- Laboratories Tab -->
   <div x-show="activeTab === 'laboratories'" class="space-y-4">
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-      <div class="p-5 border-b border-slate-100">
-        <h3 class="text-sm font-bold text-slate-900">Laboratories</h3>
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Laboratories & Computer Centers</h3>
+          <p class="text-[11px] text-slate-500">Equipped practical environments with terminal and workstation limits.</p>
+        </div>
+        <button
+          @click="addLabOpen = true"
+          class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+        >
+          <i data-lucide="plus" class="h-3.5 w-3.5"></i>
+          <span>Add Laboratory</span>
+        </button>
       </div>
+
       <table class="w-full text-left text-xs">
         <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
           <tr>
             <th class="py-3 px-6">Lab Code</th>
             <th class="py-3 px-6">Lab Name</th>
             <th class="py-3 px-6">Student Capacity</th>
-            <th class="py-3 px-6 text-right">Workstation Capacity</th>
+            <th class="py-3 px-6">Workstations</th>
+            <th class="py-3 px-6">Equipment Spec</th>
+            <th class="py-3 px-6 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
-          {% for l in laboratories %}
-          <tr class="hover:bg-slate-50/50">
-            <td class="py-3.5 px-6 font-mono font-bold text-rose-600">{{ l.lab_code }}</td>
-            <td class="py-3.5 px-6 font-medium text-slate-800">{{ l.lab_name }}</td>
-            <td class="py-3.5 px-6 font-mono">{{ l.student_capacity }} students</td>
-            <td class="py-3.5 px-6 text-right font-mono font-bold">{{ l.workstation_capacity }} terminals</td>
+          {% if not laboratories %}
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-400 italic">No laboratories registered. Click "Add Laboratory" to create one.</td>
           </tr>
-          {% endfor %}
+          {% else %}
+            {% for l in laboratories %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-mono font-bold text-rose-600">{{ l.lab_code }}</td>
+              <td class="py-3.5 px-6 font-semibold text-slate-800">{{ l.lab_name }}</td>
+              <td class="py-3.5 px-6 font-mono">{{ l.student_capacity }} students</td>
+              <td class="py-3.5 px-6 font-mono font-bold">{{ l.workstation_capacity }} terminals</td>
+              <td class="py-3.5 px-6 text-slate-500 max-w-xs truncate">{{ l.equipment_details|default('Standard laboratory hardware', true) }}</td>
+              <td class="py-3.5 px-6 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    @click="editLab = {
+                      id: '{{ l.id }}',
+                      lab_code: '{{ l.lab_code }}',
+                      lab_name: '{{ l.lab_name|replace(\"'\", \"\\'\") }}',
+                      lab_type: '{{ l.lab_type|default('software') }}',
+                      student_capacity: {{ l.student_capacity }},
+                      workstation_capacity: {{ l.workstation_capacity }},
+                      equipment_details: '{{ l.equipment_details|default('', true)|replace(\"'\", \"\\'\") }}'
+                    }; editLabOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit Laboratory"
+                  >
+                    <i data-lucide="edit-3" class="h-4 w-4"></i>
+                  </button>
+                  <button
+                    @click="deleteLab = {
+                      id: '{{ l.id }}',
+                      lab_code: '{{ l.lab_code }}',
+                      lab_name: '{{ l.lab_name|replace(\"'\", \"\\'\") }}'
+                    }; deleteLabOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title="Delete Laboratory"
+                  >
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
   </div>
+
+  <!-- ADD CLASSROOM MODAL -->
+  <div x-show="addRoomOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="addRoomOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Add Classroom</h3>
+          <p class="text-xs text-slate-500">Register lecture hall seating capacity and room code.</p>
+        </div>
+        <button @click="addRoomOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/rooms/create" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Room Code *</label>
+          <input type="text" name="room_code" required placeholder="e.g. CR-105, LH-2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Room Name *</label>
+          <input type="text" name="room_name" required placeholder="e.g. Lecture Hall 105" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Seating Capacity *</label>
+            <input type="number" name="capacity" required min="10" max="300" value="75" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Room Type</label>
+            <select name="room_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white">
+              <option value="classroom">Classroom</option>
+              <option value="seminar_hall">Seminar Hall</option>
+              <option value="auditorium">Auditorium</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="addRoomOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Save Classroom</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT CLASSROOM MODAL -->
+  <div x-show="editRoomOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="editRoomOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Edit Classroom</h3>
+          <p class="text-xs text-slate-500">Update hall name, code, or seating capacity.</p>
+        </div>
+        <button @click="editRoomOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/rooms/edit" class="mt-4 space-y-4">
+        <input type="hidden" name="room_id" :value="editRoom.id" />
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Room Code *</label>
+          <input type="text" name="room_code" required :value="editRoom.room_code" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Room Name *</label>
+          <input type="text" name="room_name" required :value="editRoom.room_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Seating Capacity *</label>
+            <input type="number" name="capacity" required min="10" max="300" :value="editRoom.capacity" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Room Type</label>
+            <select name="room_type" :value="editRoom.room_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white">
+              <option value="classroom">Classroom</option>
+              <option value="seminar_hall">Seminar Hall</option>
+              <option value="auditorium">Auditorium</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="editRoomOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CLASSROOM MODAL -->
+  <div x-show="deleteRoomOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="deleteRoomOpen = false">
+      <div class="flex items-center gap-3 text-rose-600 mb-3">
+        <div class="p-2.5 rounded-full bg-rose-50"><i data-lucide="alert-triangle" class="h-6 w-6"></i></div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Delete Classroom</h3>
+          <p class="text-xs text-slate-500">Remove classroom from college scheduling pool.</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-600 mt-2">
+        Are you sure you want to delete <strong class="text-slate-900" x-text="deleteRoom.room_code + ' - ' + deleteRoom.room_name"></strong>?
+      </p>
+      <form method="POST" action="/rooms/delete" class="mt-5 flex items-center justify-end gap-3">
+        <input type="hidden" name="room_id" :value="deleteRoom.id" />
+        <button type="button" @click="deleteRoomOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="h-4 w-4"></i>
+          <span>Delete Classroom</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD LABORATORY MODAL -->
+  <div x-show="addLabOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100" @click.away="addLabOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Add Laboratory</h3>
+          <p class="text-xs text-slate-500">Define lab codes, student capacity, and workstation limits.</p>
+        </div>
+        <button @click="addLabOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/labs/create" class="mt-4 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Lab Code *</label>
+            <input type="text" name="lab_code" required placeholder="e.g. CS-LAB-3, AI-LAB" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Lab Type</label>
+            <select name="lab_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white">
+              <option value="software">Computer / Software</option>
+              <option value="networking">Networking / Hardware</option>
+              <option value="electronics">Electronics / VLSI</option>
+              <option value="mechanical">Mechanical Workshop</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Lab Full Name *</label>
+          <input type="text" name="lab_name" required placeholder="e.g. Artificial Intelligence & Robotics Lab" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Student Capacity *</label>
+            <input type="number" name="student_capacity" required min="5" max="150" value="35" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Workstations / Terminals *</label>
+            <input type="number" name="workstation_capacity" required min="5" max="150" value="35" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Equipment Details</label>
+          <input type="text" name="equipment_details" placeholder="e.g. 40 High-performance GPU nodes, Linux OS" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="addLabOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Save Laboratory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT LABORATORY MODAL -->
+  <div x-show="editLabOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100" @click.away="editLabOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Edit Laboratory</h3>
+          <p class="text-xs text-slate-500">Update lab name, workstation capacity, or hardware spec.</p>
+        </div>
+        <button @click="editLabOpen = false" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <form method="POST" action="/labs/edit" class="mt-4 space-y-4">
+        <input type="hidden" name="lab_id" :value="editLab.id" />
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Lab Code *</label>
+            <input type="text" name="lab_code" required :value="editLab.lab_code" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Lab Type</label>
+            <select name="lab_type" :value="editLab.lab_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white">
+              <option value="software">Computer / Software</option>
+              <option value="networking">Networking / Hardware</option>
+              <option value="electronics">Electronics / VLSI</option>
+              <option value="mechanical">Mechanical Workshop</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Lab Full Name *</label>
+          <input type="text" name="lab_name" required :value="editLab.lab_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Student Capacity *</label>
+            <input type="number" name="student_capacity" required min="5" max="150" :value="editLab.student_capacity" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Workstations / Terminals *</label>
+            <input type="number" name="workstation_capacity" required min="5" max="150" :value="editLab.workstation_capacity" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Equipment Details</label>
+          <input type="text" name="equipment_details" :value="editLab.equipment_details" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white" />
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button type="button" @click="editLabOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE LABORATORY MODAL -->
+  <div x-show="deleteLabOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="deleteLabOpen = false">
+      <div class="flex items-center gap-3 text-rose-600 mb-3">
+        <div class="p-2.5 rounded-full bg-rose-50"><i data-lucide="alert-triangle" class="h-6 w-6"></i></div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Delete Laboratory</h3>
+          <p class="text-xs text-slate-500">Remove lab from practical session scheduling.</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-600 mt-2">
+        Are you sure you want to delete <strong class="text-slate-900" x-text="deleteLab.lab_code + ' - ' + deleteLab.lab_name"></strong>?
+      </p>
+      <form method="POST" action="/labs/delete" class="mt-5 flex items-center justify-end gap-3">
+        <input type="hidden" name="lab_id" :value="deleteLab.id" />
+        <button type="button" @click="deleteLabOpen = false" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="h-4 w-4"></i>
+          <span>Delete Laboratory</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

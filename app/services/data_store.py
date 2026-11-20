@@ -285,4 +285,57 @@ class DataStore:
             for l_id in self.laboratories.keys():
                 self.lab_availability[f"{l_id}_{s_id}"] = True
 
+    def delete_faculty(self, faculty_id: str) -> bool:
+        """Safely delete a faculty member and associated credentials and mappings."""
+        fac = self.faculty.pop(faculty_id, None)
+        if not fac:
+            return False
+        emp_id = fac.get("employee_id")
+        if emp_id:
+            self.profiles.pop(emp_id, None)
+        # Remove qualifications
+        self.faculty_subjects = {k: v for k, v in self.faculty_subjects.items() if v.get("faculty_id") != faculty_id}
+        # Remove availability
+        self.faculty_availability = {k: v for k, v in self.faculty_availability.items() if not k.startswith(f"{faculty_id}_")}
+        return True
+
+    def delete_classroom(self, room_id: str) -> bool:
+        """Safely delete a classroom and associated availability."""
+        cr = self.classrooms.pop(room_id, None)
+        if not cr:
+            return False
+        self.classroom_availability = {k: v for k, v in self.classroom_availability.items() if not k.startswith(f"{room_id}_")}
+        return True
+
+    def delete_laboratory(self, lab_id: str) -> bool:
+        """Safely delete a laboratory and associated availability."""
+        lab = self.laboratories.pop(lab_id, None)
+        if not lab:
+            return False
+        self.lab_availability = {k: v for k, v in self.lab_availability.items() if not k.startswith(f"{lab_id}_")}
+        return True
+
+    def delete_subject(self, subject_id: str) -> bool:
+        """Safely delete a subject and associated qualifications."""
+        sub = self.subjects.pop(subject_id, None)
+        if not sub:
+            return False
+        self.faculty_subjects = {k: v for k, v in self.faculty_subjects.items() if v.get("subject_id") != subject_id}
+        return True
+
+    def delete_department(self, dept_id: Any) -> bool:
+        """Safely delete a department."""
+        str_id = str(dept_id)
+        return bool(self.departments.pop(str_id, None) or self.departments.pop(dept_id, None))
+
+    def delete_section(self, section_id: str) -> bool:
+        """Safely delete a section and associated batches."""
+        sec = self.sections.pop(section_id, None)
+        if not sec:
+            return False
+        self.cluster_sections = [cs for cs in self.cluster_sections if cs.get("section_id") != section_id]
+        self.lab_batches = {k: v for k, v in self.lab_batches.items() if v.get("section_id") != section_id}
+        self.section_availability = {k: v for k, v in self.section_availability.items() if not k.startswith(f"{section_id}_")}
+        return True
+
 store = DataStore()

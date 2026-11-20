@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Subjects & Curriculum — SmartTimetable AI{% endblock %}
+{% block breadcrumb %}Subjects & Allocations{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{
+  addModalOpen: false,
+  editModalOpen: false,
+  deleteModalOpen: false,
+  editItem: { id: '', subject_code: '', subject_name: '', subject_type: 'theory', department_id: '', weekly_hours: 4, consecutive_periods: 1, credits: 4 },
+  deleteItem: { id: '', subject_code: '', subject_name: '' }
+}">
+
+  <!-- Header Banner -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Subjects & Curriculum Allocations</h1>
+      <p class="text-xs text-slate-500 mt-0.5">
+        Manage institutional subjects, lecture theory vs laboratory practical sessions, weekly hours, and credit weighting.
+      </p>
+    </div>
+    <button
+      @click="addModalOpen = true"
+      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-2 transition-all shrink-0"
+    >
+      <i data-lucide="plus-circle" class="h-4 w-4"></i>
+      <span>Add New Subject</span>
+    </button>
+  </div>
+
+  <!-- Notification Banner -->
+  {% if message %}
+  <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs flex items-center gap-3">
+    <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 shrink-0"></i>
+    <span>{{ message }}</span>
+  </div>
+  {% endif %}
+
+  <!-- Overview Stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-lg bg-blue-50 text-blue-600">
+          <i data-lucide="book-open" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total Subjects</p>
+          <p class="text-lg font-bold text-slate-900 mt-0.5">{{ subjects|length }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-lg bg-indigo-50 text-indigo-600">
+          <i data-lucide="file-text" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Theory Courses</p>
+          <p class="text-lg font-bold text-slate-900 mt-0.5">{{ stats.theory_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-lg bg-rose-50 text-rose-600">
+          <i data-lucide="flask-conical" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Practical Labs</p>
+          <p class="text-lg font-bold text-slate-900 mt-0.5">{{ stats.lab_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-lg bg-amber-50 text-amber-600">
+          <i data-lucide="award" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total Credits</p>
+          <p class="text-lg font-bold text-slate-900 mt-0.5">{{ stats.total_credits }} cr</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subjects Catalog Table -->
+  <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-bold text-slate-900">Institutional Curriculum Catalog</h3>
+        <p class="text-[11px] text-slate-500">Every subject maps to a department with configured weekly hours and consecutive block restrictions.</p>
+      </div>
+      <span class="text-xs text-slate-500 font-mono">{{ subjects|length }} course(s)</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-6">Subject Code</th>
+            <th class="py-3 px-6">Subject Name</th>
+            <th class="py-3 px-6">Type</th>
+            <th class="py-3 px-6">Department</th>
+            <th class="py-3 px-6">Weekly Hours</th>
+            <th class="py-3 px-6">Block Length</th>
+            <th class="py-3 px-6">Credits</th>
+            <th class="py-3 px-6">Status</th>
+            <th class="py-3 px-6 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          {% if not subjects %}
+          <tr>
+            <td colspan="9" class="py-8 text-center text-slate-400 italic">
+              No subjects registered yet. Click "Add New Subject" to create one.
+            </td>
+          </tr>
+          {% else %}
+            {% for s in subjects %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3.5 px-6 font-mono font-bold text-blue-600">{{ s.subject_code }}</td>
+              <td class="py-3.5 px-6 font-semibold text-slate-800">{{ s.subject_name }}</td>
+              <td class="py-3.5 px-6">
+                {% if s.subject_type == 'practical' %}
+                  <span class="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-semibold border border-rose-200 text-[10px] flex items-center gap-1 w-fit">
+                    <i data-lucide="flask-conical" class="h-3 w-3"></i>
+                    Practical Lab
+                  </span>
+                {% elif s.subject_type == 'elective' %}
+                  <span class="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold border border-purple-200 text-[10px] flex items-center gap-1 w-fit">
+                    <i data-lucide="sparkles" class="h-3 w-3"></i>
+                    Elective
+                  </span>
+                {% else %}
+                  <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200 text-[10px] flex items-center gap-1 w-fit">
+                    <i data-lucide="book-open" class="h-3 w-3"></i>
+                    Theory
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3.5 px-6">
+                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]">
+                  {{ s.department_name }} ({{ s.department_code }})
+                </span>
+              </td>
+              <td class="py-3.5 px-6 font-mono">{{ s.weekly_hours }} hrs/wk</td>
+              <td class="py-3.5 px-6 font-mono text-slate-600">{{ s.consecutive_periods }} period(s)</td>
+              <td class="py-3.5 px-6 font-mono font-semibold">{{ s.credits }} cr</td>
+              <td class="py-3.5 px-6">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                  Active
+                </span>
+              </td>
+              <td class="py-3.5 px-6 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    @click="editItem = {
+                      id: '{{ s.id }}',
+                      subject_code: '{{ s.subject_code }}',
+                      subject_name: '{{ s.subject_name|replace(\"'\", \"\\'\") }}',
+                      subject_type: '{{ s.subject_type }}',
+                      department_id: '{{ s.department_id }}',
+                      weekly_hours: {{ s.weekly_hours }},
+                      consecutive_periods: {{ s.consecutive_periods }},
+                      credits: {{ s.credits }}
+                    }; editModalOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit Subject"
+                  >
+                    <i data-lucide="edit-3" class="h-4 w-4"></i>
+                  </button>
+                  <button
+                    @click="deleteItem = {
+                      id: '{{ s.id }}',
+                      subject_code: '{{ s.subject_code }}',
+                      subject_name: '{{ s.subject_name|replace(\"'\", \"\\'\") }}'
+                    }; deleteModalOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title="Delete Subject"
+                  >
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Subject Modal -->
+  <div
+    x-show="addModalOpen"
+    x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+  >
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100" @click.away="addModalOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Add New Subject</h3>
+          <p class="text-xs text-slate-500">Register course details, department mapping, and hour limits.</p>
+        </div>
+        <button @click="addModalOpen = false" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form method="POST" action="/subjects/create" class="mt-4 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Subject Code *</label>
+            <input
+              type="text"
+              name="subject_code"
+              required
+              placeholder="e.g. CS503, CSL52"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Course Type *</label>
+            <select
+              name="subject_type"
+              required
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            >
+              <option value="theory">Theory Lecture</option>
+              <option value="practical">Practical Laboratory</option>
+              <option value="elective">Professional Elective</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Subject Full Name *</label>
+          <input
+            type="text"
+            name="subject_name"
+            required
+            placeholder="e.g. Operating Systems & System Programming"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
+          <select
+            name="department_id"
+            required
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          >
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Weekly Hours *</label>
+            <input
+              type="number"
+              name="weekly_hours"
+              required
+              min="1"
+              max="15"
+              value="4"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Block Length *</label>
+            <input
+              type="number"
+              name="consecutive_periods"
+              required
+              min="1"
+              max="4"
+              value="1"
+              title="Consecutive periods per session (e.g. 1 for lecture, 2 or 3 for lab)"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Credits *</label>
+            <input
+              type="number"
+              name="credits"
+              required
+              min="1"
+              max="10"
+              value="4"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            @click="addModalOpen = false"
+            class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm"
+          >
+            Create Subject
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Subject Modal -->
+  <div
+    x-show="editModalOpen"
+    x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+  >
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100" @click.away="editModalOpen = false">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Edit Subject Details</h3>
+          <p class="text-xs text-slate-500">Update curriculum metadata, hours, and department assignment.</p>
+        </div>
+        <button @click="editModalOpen = false" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form method="POST" action="/subjects/edit" class="mt-4 space-y-4">
+        <input type="hidden" name="subject_id" :value="editItem.id" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Subject Code *</label>
+            <input
+              type="text"
+              name="subject_code"
+              required
+              :value="editItem.subject_code"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Course Type *</label>
+            <select
+              name="subject_type"
+              required
+              :value="editItem.subject_type"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            >
+              <option value="theory">Theory Lecture</option>
+              <option value="practical">Practical Laboratory</option>
+              <option value="elective">Professional Elective</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Subject Full Name *</label>
+          <input
+            type="text"
+            name="subject_name"
+            required
+            :value="editItem.subject_name"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
+          <select
+            name="department_id"
+            required
+            :value="editItem.department_id"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+          >
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Weekly Hours *</label>
+            <input
+              type="number"
+              name="weekly_hours"
+              required
+              min="1"
+              max="15"
+              :value="editItem.weekly_hours"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Block Length *</label>
+            <input
+              type="number"
+              name="consecutive_periods"
+              required
+              min="1"
+              max="4"
+              :value="editItem.consecutive_periods"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Credits *</label>
+            <input
+              type="number"
+              name="credits"
+              required
+              min="1"
+              max="10"
+              :value="editItem.credits"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+            />
+          </div>
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            @click="editModalOpen = false"
+            class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Subject Confirmation Modal -->
+  <div
+    x-show="deleteModalOpen"
+    x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+  >
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100" @click.away="deleteModalOpen = false">
+      <div class="flex items-center gap-3 text-rose-600 mb-3">
+        <div class="p-2.5 rounded-full bg-rose-50">
+          <i data-lucide="alert-triangle" class="h-6 w-6"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Delete Subject</h3>
+          <p class="text-xs text-slate-500">This action cannot be undone.</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 mt-2">
+        Are you sure you want to delete <strong class="text-slate-900" x-text="deleteItem.subject_code + ' - ' + deleteItem.subject_name"></strong>?
+        Any timetable slots referencing this course will also be affected.
+      </p>
+
+      <form method="POST" action="/subjects/delete" class="mt-5 flex items-center justify-end gap-3">
+        <input type="hidden" name="subject_id" :value="deleteItem.id" />
+        <button
+          type="button"
+          @click="deleteModalOpen = false"
+          class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5"
+        >
+          <i data-lucide="trash-2" class="h-4 w-4"></i>
+          <span>Delete Subject</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

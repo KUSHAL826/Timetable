@@ -369,6 +369,158 @@ async def create_faculty_member(
         }
     })
 
+@router.post("/faculty/edit", response_class=HTMLResponse)
+async def edit_faculty_member(
+    request: Request,
+    faculty_id: str = Form(...),
+    full_name: str = Form(...),
+    department_id: str = Form(...),
+    phone_number: str = Form(...),
+    max_weekly_hours: int = Form(20),
+    email: Optional[str] = Form(None)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    fac = store.faculty.get(faculty_id)
+    if fac:
+        fac["full_name"] = full_name.strip()
+        fac["department_id"] = department_id
+        fac["phone_number"] = phone_number.strip()
+        fac["email"] = email or fac.get("email", "")
+        fac["max_weekly_hours"] = max_weekly_hours
+
+        # Synchronize profile display details
+        emp_id = fac.get("employee_id")
+        if emp_id and emp_id in store.profiles:
+            store.profiles[emp_id]["full_name"] = full_name.strip()
+            store.profiles[emp_id]["phone_number"] = phone_number.strip()
+
+    return RedirectResponse(url="/faculty", status_code=status.HTTP_302_FOUND)
+
+@router.post("/faculty/delete", response_class=HTMLResponse)
+async def delete_faculty_member(
+    request: Request,
+    faculty_id: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    store.delete_faculty(faculty_id)
+    return RedirectResponse(url="/faculty", status_code=status.HTTP_302_FOUND)
+
+@router.get("/subjects", response_class=HTMLResponse)
+async def subjects_page(request: Request):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    sub_list = []
+    theory_count = 0
+    lab_count = 0
+    total_credits = 0
+
+    for s in store.subjects.values():
+        s_copy = s.copy()
+        dept = store.get_department(s.get("department_id"))
+        s_copy["department_name"] = dept.get("name", "General Department")
+        s_copy["department_code"] = dept.get("code", "GEN")
+        sub_list.append(s_copy)
+
+        if s.get("subject_type") == "practical":
+            lab_count += 1
+        else:
+            theory_count += 1
+        total_credits += int(s.get("credits", 0))
+
+    sub_list.sort(key=lambda x: x.get("subject_code", ""))
+
+    return render_template(request, "subjects.html", {
+        "request": request,
+        "current_user": user,
+        "active_page": "subjects",
+        "subjects": sub_list,
+        "departments": list(store.departments.values()),
+        "stats": {
+            "theory_count": theory_count,
+            "lab_count": lab_count,
+            "total_credits": total_credits
+        }
+    })
+
+@router.post("/subjects/create", response_class=HTMLResponse)
+async def create_subject_entry(
+    request: Request,
+    subject_code: str = Form(...),
+    subject_name: str = Form(...),
+    subject_type: str = Form("theory"),
+    department_id: str = Form(...),
+    weekly_hours: int = Form(4),
+    consecutive_periods: int = Form(1),
+    credits: int = Form(4)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    sub_id = str(uuid.uuid4())
+    sem_id = next(iter(store.semesters.keys()), "s5555555-5555-5555-5555-555555555555")
+    store.subjects[sub_id] = {
+        "id": sub_id,
+        "subject_code": subject_code.strip().upper(),
+        "subject_name": subject_name.strip(),
+        "subject_type": subject_type.strip(),
+        "weekly_hours": weekly_hours,
+        "consecutive_periods": consecutive_periods,
+        "department_id": department_id,
+        "credits": credits,
+        "semester_id": sem_id,
+        "is_active": True
+    }
+    return RedirectResponse(url="/subjects", status_code=status.HTTP_302_FOUND)
+
+@router.post("/subjects/edit", response_class=HTMLResponse)
+async def edit_subject_entry(
+    request: Request,
+    subject_id: str = Form(...),
+    subject_code: str = Form(...),
+    subject_name: str = Form(...),
+    subject_type: str = Form("theory"),
+    department_id: str = Form(...),
+    weekly_hours: int = Form(4),
+    consecutive_periods: int = Form(1),
+    credits: int = Form(4)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    sub = store.subjects.get(subject_id)
+    if sub:
+        sub["subject_code"] = subject_code.strip().upper()
+        sub["subject_name"] = subject_name.strip()
+        sub["subject_type"] = subject_type.strip()
+        sub["department_id"] = department_id
+        sub["weekly_hours"] = weekly_hours
+        sub["consecutive_periods"] = consecutive_periods
+        sub["credits"] = credits
+
+    return RedirectResponse(url="/subjects", status_code=status.HTTP_302_FOUND)
+
+@router.post("/subjects/delete", response_class=HTMLResponse)
+async def delete_subject_entry(
+    request: Request,
+    subject_id: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    store.delete_subject(subject_id)
+    return RedirectResponse(url="/subjects", status_code=status.HTTP_302_FOUND)
+
 @router.get("/validation", response_class=HTMLResponse)
 async def validation_dashboard(request: Request):
     user = get_current_web_user(request)
@@ -710,6 +862,115 @@ async def create_department(
     }
     return RedirectResponse(url="/academic", status_code=status.HTTP_302_FOUND)
 
+@router.post("/academic/department/edit", response_class=HTMLResponse)
+async def edit_department(
+    request: Request,
+    department_id: str = Form(...),
+    name: str = Form(...),
+    code: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    dept = store.get_department(department_id)
+    if dept:
+        dept["name"] = name.strip()
+        dept["code"] = code.strip().upper()
+
+    return RedirectResponse(url="/academic", status_code=status.HTTP_302_FOUND)
+
+@router.post("/academic/department/delete", response_class=HTMLResponse)
+async def delete_department(
+    request: Request,
+    department_id: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    store.delete_department(department_id)
+    return RedirectResponse(url="/academic", status_code=status.HTTP_302_FOUND)
+
+@router.post("/academic/section/create", response_class=HTMLResponse)
+async def create_section_entry(
+    request: Request,
+    name: str = Form(...),
+    department_id: str = Form(...),
+    student_strength: int = Form(60)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    s_id = str(uuid.uuid4())
+    sem_id = next(iter(store.semesters.keys()), "s5555555-5555-5555-5555-555555555555")
+    cluster_id = next(iter(store.clusters.keys()), "c1111111-1111-1111-1111-111111111111")
+
+    store.sections[s_id] = {
+        "id": s_id,
+        "name": name.strip().upper(),
+        "department_id": department_id,
+        "semester_id": sem_id,
+        "student_strength": student_strength,
+        "cluster_id": cluster_id
+    }
+    store.cluster_sections.append({"cluster_id": cluster_id, "section_id": s_id})
+
+    # Create 2 lab batches
+    half = student_strength // 2
+    b1_id = str(uuid.uuid4())
+    b2_id = str(uuid.uuid4())
+    store.lab_batches[b1_id] = {
+        "id": b1_id,
+        "section_id": s_id,
+        "batch_name": f"Batch {name.strip().upper()}1",
+        "student_count": half
+    }
+    store.lab_batches[b2_id] = {
+        "id": b2_id,
+        "section_id": s_id,
+        "batch_name": f"Batch {name.strip().upper()}2",
+        "student_count": student_strength - half
+    }
+
+    for slot_id in store.time_slots.keys():
+        store.section_availability[f"{s_id}_{slot_id}"] = True
+
+    return RedirectResponse(url="/academic", status_code=status.HTTP_302_FOUND)
+
+@router.post("/academic/section/edit", response_class=HTMLResponse)
+async def edit_section_entry(
+    request: Request,
+    section_id: str = Form(...),
+    name: str = Form(...),
+    department_id: str = Form(...),
+    student_strength: int = Form(60)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    sec = store.sections.get(section_id)
+    if sec:
+        sec["name"] = name.strip().upper()
+        sec["department_id"] = department_id
+        sec["student_strength"] = student_strength
+
+    return RedirectResponse(url="/academic", status_code=status.HTTP_302_FOUND)
+
+@router.post("/academic/section/delete", response_class=HTMLResponse)
+async def delete_section_entry(
+    request: Request,
+    section_id: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    store.delete_section(section_id)
+    return RedirectResponse(url="/academic", status_code=status.HTTP_302_FOUND)
+
 @router.get("/rooms-labs", response_class=HTMLResponse)
 async def rooms_labs_page(request: Request):
     user = get_current_web_user(request)
@@ -749,6 +1010,135 @@ async def rooms_labs_page(request: Request):
         "lab_staffing": staffing,
         "lab_batches": batches
     })
+
+@router.post("/rooms/create", response_class=HTMLResponse)
+async def create_room(
+    request: Request,
+    room_code: str = Form(...),
+    room_name: str = Form(...),
+    capacity: int = Form(75),
+    room_type: str = Form("classroom")
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    r_id = str(uuid.uuid4())
+    store.classrooms[r_id] = {
+        "id": r_id,
+        "room_code": room_code.strip().upper(),
+        "room_name": room_name.strip(),
+        "capacity": capacity,
+        "room_type": room_type.strip(),
+        "is_active": True
+    }
+    for s_id in store.time_slots.keys():
+        store.classroom_availability[f"{r_id}_{s_id}"] = True
+
+    return RedirectResponse(url="/rooms-labs", status_code=status.HTTP_302_FOUND)
+
+@router.post("/rooms/edit", response_class=HTMLResponse)
+async def edit_room(
+    request: Request,
+    room_id: str = Form(...),
+    room_code: str = Form(...),
+    room_name: str = Form(...),
+    capacity: int = Form(75),
+    room_type: str = Form("classroom")
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    cr = store.classrooms.get(room_id)
+    if cr:
+        cr["room_code"] = room_code.strip().upper()
+        cr["room_name"] = room_name.strip()
+        cr["capacity"] = capacity
+        cr["room_type"] = room_type.strip()
+
+    return RedirectResponse(url="/rooms-labs", status_code=status.HTTP_302_FOUND)
+
+@router.post("/rooms/delete", response_class=HTMLResponse)
+async def delete_room(
+    request: Request,
+    room_id: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    store.delete_classroom(room_id)
+    return RedirectResponse(url="/rooms-labs", status_code=status.HTTP_302_FOUND)
+
+@router.post("/labs/create", response_class=HTMLResponse)
+async def create_lab(
+    request: Request,
+    lab_code: str = Form(...),
+    lab_name: str = Form(...),
+    lab_type: str = Form("software"),
+    student_capacity: int = Form(35),
+    workstation_capacity: int = Form(35),
+    equipment_details: Optional[str] = Form(None)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    l_id = str(uuid.uuid4())
+    store.laboratories[l_id] = {
+        "id": l_id,
+        "lab_code": lab_code.strip().upper(),
+        "lab_name": lab_name.strip(),
+        "lab_type": lab_type.strip(),
+        "student_capacity": student_capacity,
+        "workstation_capacity": workstation_capacity,
+        "equipment_details": equipment_details.strip() if equipment_details else "Standard laboratory hardware",
+        "is_active": True
+    }
+    for s_id in store.time_slots.keys():
+        store.lab_availability[f"{l_id}_{s_id}"] = True
+
+    return RedirectResponse(url="/rooms-labs", status_code=status.HTTP_302_FOUND)
+
+@router.post("/labs/edit", response_class=HTMLResponse)
+async def edit_lab(
+    request: Request,
+    lab_id: str = Form(...),
+    lab_code: str = Form(...),
+    lab_name: str = Form(...),
+    lab_type: str = Form("software"),
+    student_capacity: int = Form(35),
+    workstation_capacity: int = Form(35),
+    equipment_details: Optional[str] = Form(None)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    lab = store.laboratories.get(lab_id)
+    if lab:
+        lab["lab_code"] = lab_code.strip().upper()
+        lab["lab_name"] = lab_name.strip()
+        lab["lab_type"] = lab_type.strip()
+        lab["student_capacity"] = student_capacity
+        lab["workstation_capacity"] = workstation_capacity
+        if equipment_details:
+            lab["equipment_details"] = equipment_details.strip()
+
+    return RedirectResponse(url="/rooms-labs", status_code=status.HTTP_302_FOUND)
+
+@router.post("/labs/delete", response_class=HTMLResponse)
+async def delete_lab(
+    request: Request,
+    lab_id: str = Form(...)
+):
+    user = get_current_web_user(request)
+    if not user or user.get("role") != "timetable_officer":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    store.delete_laboratory(lab_id)
+    return RedirectResponse(url="/rooms-labs", status_code=status.HTTP_302_FOUND)
 
 @router.get("/availability", response_class=HTMLResponse)
 async def availability_page(request: Request):
@@ -842,3 +1232,23 @@ async def excel_tools_page(request: Request):
         "active_page": "excel-tools",
         "active_gen_id": active_gen_id
     })
+
+@router.get("/my-schedule", response_class=HTMLResponse)
+async def my_schedule_page(request: Request):
+    user = get_current_web_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+@router.get("/my-labs", response_class=HTMLResponse)
+async def my_labs_page(request: Request):
+    user = get_current_web_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+@router.get("/excel/export/timetable/{generation_id}")
+async def export_timetable_alias(generation_id: str, format: str = "xlsx"):
+    from app.api.excel_routes import export_timetable
+    return await export_timetable(generation_id=generation_id, format=format)
+
