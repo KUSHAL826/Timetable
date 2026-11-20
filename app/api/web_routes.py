@@ -15,6 +15,10 @@ from app.scheduling.validator import TimetableConflictValidator
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory="app/templates")
 
+def render_template(request: Request, name: str, context: Optional[dict] = None) -> HTMLResponse:
+    ctx = context.copy() if context else {}
+    return templates.TemplateResponse(request=request, name=name, context=ctx)
+
 def get_current_web_user(request: Request) -> Optional[dict]:
     token = request.cookies.get("smarttimetable_token")
     if not token:
@@ -37,7 +41,7 @@ async def login_page(request: Request):
     user = get_current_web_user(request)
     if user:
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("login.html", {
+    return render_template(request, "login.html", {
         "request": request,
         "must_change_password": False
     })
@@ -52,14 +56,14 @@ async def handle_login(
     profile = store.profiles.get(emp_id)
 
     if not profile or not profile.get("is_active", True):
-        return templates.TemplateResponse("login.html", {
+        return render_template(request, "login.html", {
             "request": request,
             "error": "Invalid Teacher ID / Officer ID or account inactive.",
             "must_change_password": False
         })
 
     if not verify_password(password, profile["password_hash"]):
-        return templates.TemplateResponse("login.html", {
+        return render_template(request, "login.html", {
             "request": request,
             "error": "Invalid password provided.",
             "must_change_password": False
@@ -67,7 +71,7 @@ async def handle_login(
 
     # Check if must change password on initial login
     if profile.get("must_change_password", False):
-        return templates.TemplateResponse("login.html", {
+        return render_template(request, "login.html", {
             "request": request,
             "must_change_password": True,
             "temp_employee_id": emp_id,
@@ -102,7 +106,7 @@ async def handle_first_password_change(
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
     if new_password != confirm_password:
-        return templates.TemplateResponse("login.html", {
+        return render_template(request, "login.html", {
             "request": request,
             "must_change_password": True,
             "temp_employee_id": emp_id,
@@ -111,7 +115,7 @@ async def handle_first_password_change(
         })
 
     if len(new_password) < 8:
-        return templates.TemplateResponse("login.html", {
+        return render_template(request, "login.html", {
             "request": request,
             "must_change_password": True,
             "temp_employee_id": emp_id,
@@ -120,7 +124,7 @@ async def handle_first_password_change(
         })
 
     if new_password == old_password:
-        return templates.TemplateResponse("login.html", {
+        return render_template(request, "login.html", {
             "request": request,
             "must_change_password": True,
             "temp_employee_id": emp_id,
@@ -171,7 +175,7 @@ async def dashboard(request: Request):
             gens.append(g_copy)
         gens.sort(key=lambda g: g.get("created_at", ""), reverse=True)
 
-        return templates.TemplateResponse("officer_dashboard.html", {
+        return render_template(request, "officer_dashboard.html", {
             "request": request,
             "current_user": user,
             "active_page": "dashboard",
@@ -237,7 +241,7 @@ async def dashboard(request: Request):
             if d in schedule_by_day:
                 schedule_by_day[d].append(s)
 
-        return templates.TemplateResponse("teacher_dashboard.html", {
+        return render_template(request, "teacher_dashboard.html", {
             "request": request,
             "current_user": user,
             "active_page": "dashboard",
@@ -270,7 +274,7 @@ async def faculty_management(request: Request):
         f_copy["department_code"] = dept.get("code", "GEN")
         faculty_list.append(f_copy)
 
-    return templates.TemplateResponse("faculty.html", {
+    return render_template(request, "faculty.html", {
         "request": request,
         "current_user": user,
         "active_page": "faculty",
@@ -351,7 +355,7 @@ async def create_faculty_member(
         f_copy["department_code"] = f_dept.get("code", "GEN")
         faculty_list.append(f_copy)
 
-    return templates.TemplateResponse("faculty.html", {
+    return render_template(request, "faculty.html", {
         "request": request,
         "current_user": user,
         "active_page": "faculty",
@@ -374,7 +378,7 @@ async def validation_dashboard(request: Request):
     from app.api.scheduling_routes import get_validation_dashboard
     val_data = await get_validation_dashboard()
 
-    return templates.TemplateResponse("validation.html", {
+    return render_template(request, "validation.html", {
         "request": request,
         "current_user": user,
         "active_page": "validation",
@@ -394,7 +398,7 @@ async def generate_page(request: Request):
         c_copy["department_name"] = dept.get("name", "College Department")
         clusters.append(c_copy)
 
-    return templates.TemplateResponse("generate.html", {
+    return render_template(request, "generate.html", {
         "request": request,
         "current_user": user,
         "active_page": "generate",
@@ -452,7 +456,7 @@ async def execute_generate(
         c_copy["department_name"] = dept.get("name", "College Department")
         clusters.append(c_copy)
 
-    return templates.TemplateResponse("generate.html", {
+    return render_template(request, "generate.html", {
         "request": request,
         "current_user": user,
         "active_page": "generate",
@@ -516,7 +520,7 @@ async def viewer_page(
     entries.sort(key=lambda x: (x.get("day_of_week", 0), x.get("period_number", 0)))
     day_names = {1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday"}
 
-    return templates.TemplateResponse("viewer.html", {
+    return render_template(request, "viewer.html", {
         "request": request,
         "current_user": user,
         "active_page": "viewer",
@@ -558,7 +562,7 @@ async def editor_page(request: Request):
     slots = list(store.time_slots.values())
     slots.sort(key=lambda s: (s["day_of_week"], s["period_number"]))
 
-    return templates.TemplateResponse("editor.html", {
+    return render_template(request, "editor.html", {
         "request": request,
         "current_user": user,
         "active_page": "editor",
@@ -637,7 +641,7 @@ async def modify_entry(
                     "faculty_name": fac.get("full_name", "")
                 })
 
-    return templates.TemplateResponse("editor.html", {
+    return render_template(request, "editor.html", {
         "request": request,
         "current_user": user,
         "active_page": "editor",
@@ -677,7 +681,7 @@ async def academic_page(request: Request):
         s_copy["department_code"] = dept.get("code", "")
         sections.append(s_copy)
 
-    return templates.TemplateResponse("academic.html", {
+    return render_template(request, "academic.html", {
         "request": request,
         "current_user": user,
         "active_page": "academic",
@@ -736,7 +740,7 @@ async def rooms_labs_page(request: Request):
             "student_count": b.get("student_count", 0)
         })
 
-    return templates.TemplateResponse("rooms_labs.html", {
+    return render_template(request, "rooms_labs.html", {
         "request": request,
         "current_user": user,
         "active_page": "rooms-labs",
@@ -753,7 +757,7 @@ async def availability_page(request: Request):
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
 
     day_names = {1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri"}
-    return templates.TemplateResponse("availability.html", {
+    return render_template(request, "availability.html", {
         "request": request,
         "current_user": user,
         "active_page": "availability",
@@ -777,7 +781,7 @@ async def electives_page(request: Request):
         g_copy["options"] = opts
         res.append(g_copy)
 
-    return templates.TemplateResponse("electives.html", {
+    return render_template(request, "electives.html", {
         "request": request,
         "current_user": user,
         "active_page": "electives",
@@ -790,7 +794,7 @@ async def ai_advisory_page(request: Request):
     if not user or user.get("role") != "timetable_officer":
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
 
-    return templates.TemplateResponse("ai_advisory.html", {
+    return render_template(request, "ai_advisory.html", {
         "request": request,
         "current_user": user,
         "active_page": "ai-advisory",
@@ -818,7 +822,7 @@ async def run_ai_advisory(request: Request):
         "findings": pre_analysis.get("findings", [])
     })
 
-    return templates.TemplateResponse("ai_advisory.html", {
+    return render_template(request, "ai_advisory.html", {
         "request": request,
         "current_user": user,
         "active_page": "ai-advisory",
@@ -832,7 +836,7 @@ async def excel_tools_page(request: Request):
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
 
     active_gen_id = next((g["id"] for g in store.timetable_generations.values()), None)
-    return templates.TemplateResponse("excel_tools.html", {
+    return render_template(request, "excel_tools.html", {
         "request": request,
         "current_user": user,
         "active_page": "excel-tools",
