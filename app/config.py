@@ -6,13 +6,20 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
+    # Supabase Configuration (supports previous project naming convention)
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
-    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
-    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", os.getenv("SUPABASE_KEY", ""))
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", os.getenv("SUPABASE_KEY", ""))
+    SUPABASE_DB_URL: str = os.getenv("SUPABASE_DB_URL", "")
+    SUPABASE_TABLE: str = os.getenv("SUPABASE_TABLE", "public")
 
-    APP_ENV: str = os.getenv("APP_ENV", "development")
-    APP_DEBUG: bool = os.getenv("APP_DEBUG", "true").lower() == "true"
-    APP_SECRET_KEY: str = os.getenv("APP_SECRET_KEY", "smarttimetable_secret_2026")
+    APP_ENV: str = os.getenv("APP_ENV", "production")
+    APP_DEBUG: bool = os.getenv("APP_DEBUG", "false").lower() == "true"
+    
+    # Secret Key (supports both SECRET_KEY and APP_SECRET_KEY)
+    SECRET_KEY: str = os.getenv("SECRET_KEY", os.getenv("APP_SECRET_KEY", "smarttimetable_secret_2026"))
+    APP_SECRET_KEY: str = os.getenv("APP_SECRET_KEY", os.getenv("SECRET_KEY", "smarttimetable_secret_2026"))
 
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
