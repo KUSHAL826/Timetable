@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS public.subjects (
     subject_type TEXT NOT NULL CHECK (subject_type IN ('theory', 'practical', 'elective')),
     weekly_hours INT NOT NULL DEFAULT 0,
     consecutive_periods INT DEFAULT 1,
-    department_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
+    department_id INT REFERENCES public.departments(id) ON DELETE SET NULL,
     credits INT DEFAULT 3,
     semester_id UUID REFERENCES public.semesters(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT true
