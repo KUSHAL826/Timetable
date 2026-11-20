@@ -110,25 +110,45 @@
             </td>
             <td class="py-3.5 px-6 text-right">
               <div class="flex items-center justify-end gap-1.5">
-                <button @click="editItem = {
-                      id: '{{ f.id }}',
-                      employee_id: '{{ f.employee_id }}',
-                      full_name: '{{ f.full_name|replace(\"'\", \"\\' \") }}', department_id: '{{ f.department_id }}' ,
-                  phone_number: '{{ f.phone_number }}' , email: '{{ f.email|default('', true) }}' , max_weekly_hours: {{
-                  f.max_weekly_hours|default(20) }} }; editModalOpen=true"
-                  class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                  title="Edit Faculty">
-                  <i data-lucide="edit-3" class="h-4 w-4"></i>
-                </button>
-                <button @click="deleteItem = {
-                      id: '{{ f.id }}',
-                      employee_id: '{{ f.employee_id }}',
-                      full_name: '{{ f.full_name|replace(\"'\", \"\\' \") }}' }; deleteModalOpen=true"
-                  class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                  title="Delete Faculty">
-                  <i data-lucide="trash-2" class="h-4 w-4"></i>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    data-id="{{ f.id }}"
+                    data-emp="{{ f.employee_id }}"
+                    data-name="{{ f.full_name }}"
+                    data-dept="{{ f.department_id }}"
+                    data-phone="{{ f.phone_number }}"
+                    data-email="{{ f.email|default('', true) }}"
+                    data-hours="{{ f.max_weekly_hours|default(20) }}"
+                    @click="editItem = {
+                      id: $el.dataset.id,
+                      employee_id: $el.dataset.emp,
+                      full_name: $el.dataset.name,
+                      department_id: $el.dataset.dept,
+                      phone_number: $el.dataset.phone,
+                      email: $el.dataset.email,
+                      max_weekly_hours: Number($el.dataset.hours)
+                    }; editModalOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit Faculty"
+                  >
+                    <i data-lucide="edit-3" class="h-4 w-4"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-id="{{ f.id }}"
+                    data-emp="{{ f.employee_id }}"
+                    data-name="{{ f.full_name }}"
+                    @click="deleteItem = {
+                      id: $el.dataset.id,
+                      employee_id: $el.dataset.emp,
+                      full_name: $el.dataset.name
+                    }; deleteModalOpen = true"
+                    class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title="Delete Faculty"
+                  >
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                  </button>
+                </div>
             </td>
           </tr>
           {% endfor %}

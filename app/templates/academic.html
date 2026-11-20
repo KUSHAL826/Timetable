@@ -139,11 +139,16 @@
               <td class="py-3.5 px-6 text-right">
                 <div class="flex items-center justify-end gap-1.5">
                   <button
+                    type="button"
+                    data-id="{{ s.id }}"
+                    data-name="{{ s.name }}"
+                    data-dept="{{ s.department_id }}"
+                    data-strength="{{ s.student_strength }}"
                     @click="editSec = {
-                      id: '{{ s.id }}',
-                      name: '{{ s.name|replace(\"'\", \"\\'\") }}',
-                      department_id: '{{ s.department_id }}',
-                      student_strength: {{ s.student_strength }}
+                      id: $el.dataset.id,
+                      name: $el.dataset.name,
+                      department_id: $el.dataset.dept,
+                      student_strength: Number($el.dataset.strength)
                     }; editSecOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     title="Edit Section"
@@ -151,9 +156,12 @@
                     <i data-lucide="edit-3" class="h-4 w-4"></i>
                   </button>
                   <button
+                    type="button"
+                    data-id="{{ s.id }}"
+                    data-name="{{ s.name }}"
                     @click="deleteSec = {
-                      id: '{{ s.id }}',
-                      name: '{{ s.name|replace(\"'\", \"\\'\") }}'
+                      id: $el.dataset.id,
+                      name: $el.dataset.name
                     }; deleteSecOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                     title="Delete Section"
@@ -243,10 +251,14 @@
             <td class="py-3.5 px-6 text-right">
               <div class="flex items-center justify-end gap-1.5">
                 <button
+                  type="button"
+                  data-id="{{ d.id }}"
+                  data-name="{{ d.name }}"
+                  data-code="{{ d.code }}"
                   @click="editDept = {
-                    id: '{{ d.id }}',
-                    name: '{{ d.name|replace(\"'\", \"\\'\") }}',
-                    code: '{{ d.code }}'
+                    id: $el.dataset.id,
+                    name: $el.dataset.name,
+                    code: $el.dataset.code
                   }; editDeptOpen = true"
                   class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                   title="Edit Department"
@@ -254,10 +266,14 @@
                   <i data-lucide="edit-3" class="h-4 w-4"></i>
                 </button>
                 <button
+                  type="button"
+                  data-id="{{ d.id }}"
+                  data-name="{{ d.name }}"
+                  data-code="{{ d.code }}"
                   @click="deleteDept = {
-                    id: '{{ d.id }}',
-                    name: '{{ d.name|replace(\"'\", \"\\'\") }}',
-                    code: '{{ d.code }}'
+                    id: $el.dataset.id,
+                    name: $el.dataset.name,
+                    code: $el.dataset.code
                   }; deleteDeptOpen = true"
                   class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                   title="Delete Department"

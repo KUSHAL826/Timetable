@@ -156,15 +156,24 @@
               <td class="py-3.5 px-6 text-right">
                 <div class="flex items-center justify-end gap-1.5">
                   <button
+                    type="button"
+                    data-id="{{ s.id }}"
+                    data-code="{{ s.subject_code }}"
+                    data-name="{{ s.subject_name }}"
+                    data-type="{{ s.subject_type }}"
+                    data-dept="{{ s.department_id }}"
+                    data-hours="{{ s.weekly_hours }}"
+                    data-blocks="{{ s.consecutive_periods }}"
+                    data-credits="{{ s.credits }}"
                     @click="editItem = {
-                      id: '{{ s.id }}',
-                      subject_code: '{{ s.subject_code }}',
-                      subject_name: '{{ s.subject_name|replace(\"'\", \"\\'\") }}',
-                      subject_type: '{{ s.subject_type }}',
-                      department_id: '{{ s.department_id }}',
-                      weekly_hours: {{ s.weekly_hours }},
-                      consecutive_periods: {{ s.consecutive_periods }},
-                      credits: {{ s.credits }}
+                      id: $el.dataset.id,
+                      subject_code: $el.dataset.code,
+                      subject_name: $el.dataset.name,
+                      subject_type: $el.dataset.type,
+                      department_id: $el.dataset.dept,
+                      weekly_hours: Number($el.dataset.hours),
+                      consecutive_periods: Number($el.dataset.blocks),
+                      credits: Number($el.dataset.credits)
                     }; editModalOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     title="Edit Subject"
@@ -172,10 +181,14 @@
                     <i data-lucide="edit-3" class="h-4 w-4"></i>
                   </button>
                   <button
+                    type="button"
+                    data-id="{{ s.id }}"
+                    data-code="{{ s.subject_code }}"
+                    data-name="{{ s.subject_name }}"
                     @click="deleteItem = {
-                      id: '{{ s.id }}',
-                      subject_code: '{{ s.subject_code }}',
-                      subject_name: '{{ s.subject_name|replace(\"'\", \"\\'\") }}'
+                      id: $el.dataset.id,
+                      subject_code: $el.dataset.code,
+                      subject_name: $el.dataset.name
                     }; deleteModalOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                     title="Delete Subject"

@@ -190,12 +190,18 @@
               <td class="py-3.5 px-6 text-right">
                 <div class="flex items-center justify-end gap-1.5">
                   <button
+                    type="button"
+                    data-id="{{ r.id }}"
+                    data-code="{{ r.room_code }}"
+                    data-name="{{ r.room_name }}"
+                    data-cap="{{ r.capacity }}"
+                    data-type="{{ r.room_type }}"
                     @click="editRoom = {
-                      id: '{{ r.id }}',
-                      room_code: '{{ r.room_code }}',
-                      room_name: '{{ r.room_name|replace(\"'\", \"\\'\") }}',
-                      capacity: {{ r.capacity }},
-                      room_type: '{{ r.room_type }}'
+                      id: $el.dataset.id,
+                      room_code: $el.dataset.code,
+                      room_name: $el.dataset.name,
+                      capacity: Number($el.dataset.cap),
+                      room_type: $el.dataset.type
                     }; editRoomOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     title="Edit Classroom"
@@ -203,10 +209,14 @@
                     <i data-lucide="edit-3" class="h-4 w-4"></i>
                   </button>
                   <button
+                    type="button"
+                    data-id="{{ r.id }}"
+                    data-code="{{ r.room_code }}"
+                    data-name="{{ r.room_name }}"
                     @click="deleteRoom = {
-                      id: '{{ r.id }}',
-                      room_code: '{{ r.room_code }}',
-                      room_name: '{{ r.room_name|replace(\"'\", \"\\'\") }}'
+                      id: $el.dataset.id,
+                      room_code: $el.dataset.code,
+                      room_name: $el.dataset.name
                     }; deleteRoomOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                     title="Delete Classroom"
@@ -267,14 +277,22 @@
               <td class="py-3.5 px-6 text-right">
                 <div class="flex items-center justify-end gap-1.5">
                   <button
+                    type="button"
+                    data-id="{{ l.id }}"
+                    data-code="{{ l.lab_code }}"
+                    data-name="{{ l.lab_name }}"
+                    data-type="{{ l.lab_type|default('software') }}"
+                    data-scap="{{ l.student_capacity }}"
+                    data-wcap="{{ l.workstation_capacity }}"
+                    data-eq="{{ l.equipment_details|default('', true) }}"
                     @click="editLab = {
-                      id: '{{ l.id }}',
-                      lab_code: '{{ l.lab_code }}',
-                      lab_name: '{{ l.lab_name|replace(\"'\", \"\\'\") }}',
-                      lab_type: '{{ l.lab_type|default('software') }}',
-                      student_capacity: {{ l.student_capacity }},
-                      workstation_capacity: {{ l.workstation_capacity }},
-                      equipment_details: '{{ l.equipment_details|default('', true)|replace(\"'\", \"\\'\") }}'
+                      id: $el.dataset.id,
+                      lab_code: $el.dataset.code,
+                      lab_name: $el.dataset.name,
+                      lab_type: $el.dataset.type,
+                      student_capacity: Number($el.dataset.scap),
+                      workstation_capacity: Number($el.dataset.wcap),
+                      equipment_details: $el.dataset.eq
                     }; editLabOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     title="Edit Laboratory"
@@ -282,10 +300,14 @@
                     <i data-lucide="edit-3" class="h-4 w-4"></i>
                   </button>
                   <button
+                    type="button"
+                    data-id="{{ l.id }}"
+                    data-code="{{ l.lab_code }}"
+                    data-name="{{ l.lab_name }}"
                     @click="deleteLab = {
-                      id: '{{ l.id }}',
-                      lab_code: '{{ l.lab_code }}',
-                      lab_name: '{{ l.lab_name|replace(\"'\", \"\\'\") }}'
+                      id: $el.dataset.id,
+                      lab_code: $el.dataset.code,
+                      lab_name: $el.dataset.name
                     }; deleteLabOpen = true"
                     class="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                     title="Delete Laboratory"
